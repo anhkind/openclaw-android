@@ -572,18 +572,22 @@ if ! node_is_supported "$NODE_VERSION"; then
     exit 1
 fi
 
-# Create Android networking shim in user home
-log_info "Creating Android networking fix..."
+# Create the Android/proot runtime shim in the user's home
+log_info "Creating Android runtime compatibility shim..."
 cat > "$HOME/openclaw-shim.cjs" << 'EOF'
-// Android/proot safety net: os.networkInterfaces() can throw (or return an empty
-// map) in some Termux/proot setups. Only fall back to loopback in that case so
-// real interfaces keep working when they are readable.
+// Android/proot safety net for OpenClaw.
 const os = require('os');
-const original = os.networkInterfaces.bind(os);
+const fs = require('fs');
+
+// --- Android networking fallback -------------------------------------------
+// os.networkInterfaces() can throw (or return an empty map) in some
+// Termux/proot setups. Only fall back to loopback in that case so real
+// interfaces keep working when they are readable.
+const originalNetworkInterfaces = os.networkInterfaces.bind(os);
 
 os.networkInterfaces = () => {
   try {
-    const interfaces = original();
+    const interfaces = originalNetworkInterfaces();
     if (interfaces && Object.keys(interfaces).length > 0) {
       return interfaces;
     }
@@ -602,8 +606,115 @@ os.networkInterfaces = () => {
     }]
   };
 };
+
+// Some proot/Android setups report an empty hostname; OpenClaw's ownership
+// schema requires a non-empty host.
+const realHostname = os.hostname.bind(os);
+os.hostname = () => realHostname() || 'localhost';
+
+// --- Stable process identity for OpenClaw's gateway ownership check --------
+// OpenClaw records /proc/self/ns/pid, /proc/sys/kernel/random/boot_id and the
+// hostname to decide whether the process holding the gateway lock is still
+// valid. Under PRoot those /proc entries can be unreadable or unstable, so the
+// lock is written with `processNamespace: null`. The next start then treats its
+// own lock as belonging to a "different PID namespace" and refuses to run.
+// Normalize the values so every process in this container agrees.
+const PID_NS_PATH = /^\/proc\/(?:self|\d+)\/ns\/pid$/;
+const BOOT_ID_PATH = '/proc/sys/kernel/random/boot_id';
+const FALLBACK_BOOT_ID = '123e4567-e89b-42d3-a456-426614174000';
+const PID_NS_INO = 4026531836n;
+const PID_NS_LINK = 'pid:[4026531836]';
+
+const realStatSync = fs.statSync;
+
+function pidNamespaceStats(target, options) {
+  const bigint = Boolean(options && typeof options === 'object' && options.bigint);
+  const ino = bigint ? PID_NS_INO : Number(PID_NS_INO);
+  try {
+    const real = realStatSync.call(fs, target, options);
+    try {
+      Object.defineProperty(real, 'ino', { value: ino, configurable: true });
+      return real;
+    } catch (_) {
+      // fall through to the minimal Stats-shaped fallback
+    }
+  } catch (_) {
+    // fall through to the minimal Stats-shaped fallback
+  }
+  return {
+    ino,
+    isFile: () => false,
+    isDirectory: () => false,
+    isSymbolicLink: () => true
+  };
+}
+
+fs.statSync = function (target, options) {
+  if (typeof target === 'string' && PID_NS_PATH.test(target)) {
+    return pidNamespaceStats(target, options);
+  }
+  return realStatSync.apply(fs, arguments);
+};
+
+const realReadlinkSync = fs.readlinkSync;
+fs.readlinkSync = function (target) {
+  if (typeof target === 'string' && PID_NS_PATH.test(target)) {
+    return PID_NS_LINK;
+  }
+  return realReadlinkSync.apply(fs, arguments);
+};
+
+const BOOT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function fallbackBootId(args) {
+  const options = args[1];
+  const encoding = typeof options === 'string' ? options : options && options.encoding;
+  return encoding ? FALLBACK_BOOT_ID + '\n' : Buffer.from(FALLBACK_BOOT_ID + '\n');
+}
+
+function isValidBootId(value) {
+  const text = Buffer.isBuffer(value) ? value.toString('utf8') : String(value);
+  return BOOT_ID_RE.test(text.trim());
+}
+
+const realReadFileSync = fs.readFileSync;
+fs.readFileSync = function (target) {
+  if (typeof target === 'string' && target === BOOT_ID_PATH) {
+    let value;
+    try {
+      value = realReadFileSync.apply(fs, arguments);
+    } catch (_) {
+      return fallbackBootId(arguments);
+    }
+    return isValidBootId(value) ? value : fallbackBootId(arguments);
+  }
+  return realReadFileSync.apply(fs, arguments);
+};
+
+// Worker threads do not inherit NODE_OPTIONS when an explicit `env` is passed.
+// OpenClaw starts its state-lease heartbeat worker with `env: {}`, so make sure
+// the shim is loaded there too; otherwise the worker sees a different identity
+// and stops renewing the gateway owner lease.
+const workerThreads = require('worker_threads');
+if (typeof workerThreads.Worker === 'function') {
+  const OriginalWorker = workerThreads.Worker;
+  const shimPath = __filename.replace(/\\/g, '/');
+
+  class OpenClawShimWorker extends OriginalWorker {
+    constructor(filename, options = {}) {
+      const env = { ...(options.env || {}) };
+      const current = env.NODE_OPTIONS ?? process.env.NODE_OPTIONS ?? '';
+      env.NODE_OPTIONS = current.includes(shimPath)
+        ? current
+        : `${current} --require "${shimPath}"`.trim();
+      super(filename, { ...options, env });
+    }
+  }
+
+  workerThreads.Worker = OpenClawShimWorker;
+}
 EOF
-log_success "Networking shim created at $HOME/openclaw-shim.cjs"
+log_success "Runtime shim created at $HOME/openclaw-shim.cjs"
 
 # Install OpenClaw
 # npm >=11.16 / >=12 blocks lifecycle scripts unless explicitly allowed, and
