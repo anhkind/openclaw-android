@@ -68,7 +68,7 @@ This is the easiest method and handles everything automatically:
 2. **Run this single command:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh | bash
 ```
 
 3. **Wait patiently** (5-15 minutes depending on your device)
@@ -85,7 +85,7 @@ If you prefer to review the script first:
 
 ```bash
 # Download the installer
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 
 # Review the script (optional but recommended)
 less install.sh
@@ -457,7 +457,7 @@ update-openclaw
 
 ```bash
 # In Termux (not Debian)
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh --reinstall
 ```
@@ -476,7 +476,7 @@ Cleanest approach, ensures everything is set up correctly:
 
 ```bash
 # In Termux
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh --reinstall
 ```
@@ -571,7 +571,7 @@ source ~/.bashrc
 **Solution**: The installer now handles this automatically (v2026.2.10+). If using an older version, update:
 
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -1013,7 +1013,7 @@ The installer checks for updates automatically. To manually update:
 
 ```bash
 # In Termux
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```

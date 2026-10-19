@@ -19,7 +19,7 @@
 This is fixed in v2026.2.8. Update your installer:
 ```bash
 # Download latest version
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -36,7 +36,7 @@ chmod +x install.sh
 
 **For fresh installations**, just re-run the installer:
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh --reinstall
 ```
@@ -102,7 +102,7 @@ openclaw config
 Re-run the installer to get the global fix applied automatically:
 
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh --reinstall
 ```
@@ -155,7 +155,7 @@ openclaw config list
 **Solution**:
 This is fixed in v2026.2.11. Update your installer:
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -184,7 +184,7 @@ npm install -g openclaw@latest --allow-scripts=openclaw
 **Solution**:
 This is fixed in v2026.2.10. Update your installer:
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
@@ -202,7 +202,7 @@ This is fixed in v2026.2.10. The installer now handles config file conflicts aut
 
 Update to latest version:
 ```bash
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```

@@ -287,7 +287,7 @@ None currently. We will document any security-related updates here.
 
 The installer automatically checks for updates. To manually check:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh | bash
 ```
 
 **Reporting Issues:**

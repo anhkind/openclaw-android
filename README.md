@@ -28,7 +28,7 @@
 Open Termux and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh | bash
 ```
 **Wait 5-15 minutes** for automated installation to complete.
 
@@ -67,7 +67,7 @@ If you prefer to review the script first:
 
 ```bash
 # Download the installer
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 
 # Review it (optional)
 less install.sh
@@ -237,7 +237,7 @@ The installer auto-checks for updates. To force update:
 
 ```bash
 # In Termux
-curl -O https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh
+curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
 chmod +x install.sh
 ./install.sh --reinstall
 ```
@@ -380,7 +380,7 @@ It helps others discover the project and motivates continued development.
 
 ## 🔗 Quick Links
 
-- **Download**: [install.sh](https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh)
+- **Download**: [install.sh](https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh)
 - **Issues**: [Report a bug](https://github.com/iyeoh88-svg/openclaw-android/issues/new)
 - **Discussions**: [Ask questions](https://github.com/iyeoh88-svg/openclaw-android/discussions)
 - **Changelog**: [Version history](CHANGELOG.md)

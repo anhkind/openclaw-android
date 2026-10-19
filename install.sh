@@ -10,8 +10,8 @@ set -e  # Exit on error
 
 # Script Configuration
 SCRIPT_VERSION="2026.10.19"
-SCRIPT_URL="https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/install.sh"
-VERSION_URL="https://raw.githubusercontent.com/iyeoh88-svg/openclaw-android/main/VERSION"
+SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh"
+VERSION_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/VERSION"
 REPO_URL="https://github.com/iyeoh88-svg/openclaw-android"
 
 # Package versions / compatibility floors
