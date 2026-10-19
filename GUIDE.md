@@ -37,7 +37,7 @@
    - **Android 12+** (recommended)
    - **Android 11** may work but is experimental
    - **Android 7-10** basic support (tested on Android 7)
-   - **Minimum 2GB free storage** (4GB recommended)
+   - **Minimum 4GB free storage** (6GB recommended)
    - **Minimum 4GB RAM** (6GB+ recommended for better performance)
    - **Stable internet connection** for initial setup
 
@@ -121,7 +121,7 @@ The automated installer:
 4.  Sets up Debian environment
 5.  Creates dedicated `openclaw` user (non-root)
 6.  Installs NVM (Node Version Manager)
-7.  Installs Node.js v22
+7.  Installs Node.js 24 LTS (OpenClaw requires 24.16+; Node 26 optional)
 8.  Creates Android networking fix (shim)
 9.  Installs OpenClaw globally
 10.  Sets up convenient aliases
@@ -149,8 +149,11 @@ pkg install proot-distro -y
 ### Step 2: Install Debian
 
 ```bash
-# Install Debian distribution
-proot-distro install debian
+# Install Debian (proot-distro v5 pulls the official OCI image)
+proot-distro install --name debian debian:trixie
+
+# On proot-distro v4 (older Termux), use:
+# proot-distro install debian
 
 # Login to Debian as root (temporary, for setup)
 proot-distro login debian
@@ -200,22 +203,22 @@ sudo apt install -y curl git build-essential ca-certificates
 
 ```bash
 # Install NVM (Node Version Manager)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 
 # Load NVM into current session
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Install Node.js 22
-nvm install 22
+# Install Node.js 24 LTS (OpenClaw requires >= 24.16.0)
+nvm install 24
 
-# Set as default
-nvm use 22
-nvm alias default 22
+# Set as default (use 26 instead if you prefer the upstream-recommended line)
+nvm use 24
+nvm alias default 24
 
 # Verify installation
-node --version  # Should show v22.x.x
-npm --version   # Should show 10.x.x or higher
+node --version  # Should show v24.x.x
+npm --version   # Should show 11.x.x or higher
 ```
 
 ### Step 7: Create Networking Shim
@@ -226,16 +229,24 @@ This fixes the Android Error 13 issue:
 # Create the shim file in your home directory
 cat <<'EOF' > $HOME/openclaw-shim.cjs
 const os = require('os');
-os.networkInterfaces = () => ({
-  lo: [{
-    address: '127.0.0.1',
-    netmask: '255.0.0.0',
-    family: 'IPv4',
-    mac: '00:00:00:00:00:00',
-    internal: true,
-    cidr: '127.0.0.1/8'
-  }]
-});
+const original = os.networkInterfaces.bind(os);
+
+os.networkInterfaces = () => {
+  try {
+    const interfaces = original();
+    if (interfaces && Object.keys(interfaces).length > 0) return interfaces;
+  } catch (_) {}
+  return {
+    lo: [{
+      address: '127.0.0.1',
+      netmask: '255.0.0.0',
+      family: 'IPv4',
+      mac: '00:00:00:00:00:00',
+      internal: true,
+      cidr: '127.0.0.1/8'
+    }]
+  };
+};
 EOF
 
 # Verify it was created
@@ -247,8 +258,11 @@ ls -la $HOME/openclaw-shim.cjs
 ### Step 8: Install OpenClaw
 
 ```bash
-# Install globally
-npm install -g openclaw@latest
+# Install globally (npm 11.16+ / 12 needs the lifecycle allow-list)
+npm install -g openclaw@latest --allow-scripts=openclaw
+
+# On npm 11.15 and earlier, omit --allow-scripts=openclaw:
+# npm install -g openclaw@latest
 
 # Verify installation
 openclaw --version
@@ -266,13 +280,15 @@ cat >> ~/.bashrc << 'EOF'
 # ========================================
 
 # Android networking fix - applies to ALL openclaw commands
-export NODE_OPTIONS="--require /home/openclaw/openclaw-shim.cjs"
+export NODE_OPTIONS="--require $HOME/openclaw-shim.cjs"
 
 # Convenient aliases
 alias start-claw='openclaw gateway --bind loopback'
-alias update-openclaw='npm update -g openclaw'
-alias claw-status='ps aux | grep openclaw'
-alias claw-logs='tail -f ~/.openclaw/logs/*.log'
+alias update-openclaw='openclaw update'
+alias claw-status='openclaw gateway status'
+alias claw-logs='openclaw logs --follow'
+alias claw-doctor='openclaw doctor'
+alias claw-dashboard='openclaw dashboard'
 
 EOF
 
@@ -480,7 +496,8 @@ proot-distro login debian
 
 # 2. Create the openclaw user
 useradd -m -s /bin/bash openclaw
-echo "openclaw ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+echo "openclaw ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-openclaw
+chmod 0440 /etc/sudoers.d/90-openclaw
 
 # 3. Copy your OpenClaw config (if you want to keep it)
 cp -r /root/.openclaw /home/openclaw/.openclaw 2>/dev/null || true
@@ -493,41 +510,51 @@ exit
 proot-distro login debian --user openclaw
 
 # 6. Reinstall NVM and Node.js as openclaw user
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 source ~/.bashrc
-nvm install 22
-nvm use 22
-nvm alias default 22
+nvm install 24
+nvm use 24
+nvm alias default 24
 
-# 7. Reinstall OpenClaw
-npm install -g openclaw@latest
+# 7. Reinstall OpenClaw (npm 11.16+ / 12 needs the lifecycle allow-list)
+npm install -g openclaw@latest --allow-scripts=openclaw
 
 # 8. Create shim in new location
 cat > $HOME/openclaw-shim.cjs << 'EOF'
 const os = require('os');
-os.networkInterfaces = () => ({
-  lo: [{
-    address: '127.0.0.1',
-    netmask: '255.0.0.0',
-    family: 'IPv4',
-    mac: '00:00:00:00:00:00',
-    internal: true,
-    cidr: '127.0.0.1/8'
-  }]
-});
+const original = os.networkInterfaces.bind(os);
+
+os.networkInterfaces = () => {
+  try {
+    const interfaces = original();
+    if (interfaces && Object.keys(interfaces).length > 0) return interfaces;
+  } catch (_) {}
+  return {
+    lo: [{
+      address: '127.0.0.1',
+      netmask: '255.0.0.0',
+      family: 'IPv4',
+      mac: '00:00:00:00:00:00',
+      internal: true,
+      cidr: '127.0.0.1/8'
+    }]
+  };
+};
 EOF
 
 # 9. Update bashrc with new paths
 cat >> ~/.bashrc << 'EOF'
 
 # Android networking fix - applies globally
-export NODE_OPTIONS="--require /home/openclaw/openclaw-shim.cjs"
+export NODE_OPTIONS="--require $HOME/openclaw-shim.cjs"
 
 # Aliases
 alias start-claw='openclaw gateway --bind loopback'
-alias update-openclaw='npm update -g openclaw'
-alias claw-status='ps aux | grep openclaw'
-alias claw-logs='tail -f ~/.openclaw/logs/*.log'
+alias update-openclaw='openclaw update'
+alias claw-status='openclaw gateway status'
+alias claw-logs='openclaw logs --follow'
+alias claw-doctor='openclaw doctor'
+alias claw-dashboard='openclaw dashboard'
 EOF
 
 source ~/.bashrc
@@ -871,7 +898,7 @@ termux-wake-lock
 ```bash
 # Inside Debian
 npm cache clean --force
-npm install -g openclaw@latest
+npm install -g openclaw@latest --allow-scripts=openclaw
 ```
 
 #### 4. Gateway won't start
@@ -912,15 +939,18 @@ openclaw onboard
 
 ```bash
 # In Termux
-proot-distro remove debian -y
+proot-distro remove debian
 ./install.sh --reinstall
 ```
 
 #### Check Logs
 
 ```bash
-# Inside Debian
-cat ~/.openclaw/logs/gateway.log
+# Inside Debian (tails the Gateway log via RPC)
+openclaw logs --follow
+
+# Raw log files (default location)
+ls -la /tmp/openclaw/
 ```
 
 ### Getting Help
@@ -999,8 +1029,9 @@ apt update && apt upgrade -y
 
 ```bash
 # Inside Debian
-nvm install 22 --latest-npm
-nvm use 22
+nvm install 24 --latest-npm
+nvm use 24
+nvm alias default 24
 ```
 
 ## Additional Resources

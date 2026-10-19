@@ -34,7 +34,7 @@ Paste error messages here
 ```
 
 ## Logs
-<!-- If applicable, paste relevant logs from ~/.openclaw/logs/ -->
+<!-- If applicable, paste relevant logs from `openclaw logs` or /tmp/openclaw/ -->
 ```
 Paste logs here
 ```

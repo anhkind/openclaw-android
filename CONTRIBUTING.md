@@ -144,7 +144,7 @@ git checkout -b feature/my-feature
 2. **Test on clean environment:**
    ```bash
    # Remove existing installation
-   proot-distro remove debian -y
+   proot-distro remove debian
    
    # Test fresh install
    ./install.sh --reinstall

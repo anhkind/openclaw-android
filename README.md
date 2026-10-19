@@ -1,7 +1,7 @@
 # 🦞 OpenClaw for Android (Termux)
 <img width="540" height="405" alt="image" src="https://github.com/user-attachments/assets/e9a9d875-74d1-410d-a9bf-3e1be55f4cb4" />
 
-[![Version](https://img.shields.io/badge/version-2026.2.15-blue.svg)](https://github.com/iyeoh88-svg/openclaw-android)
+[![Version](https://img.shields.io/badge/version-2026.10.19-blue.svg)](https://github.com/iyeoh88-svg/openclaw-android)
 [![Android](https://img.shields.io/badge/Android-12%2B-green.svg)](https://www.android.com/)
 [![Termux](https://img.shields.io/badge/Termux-Required-orange.svg)](https://termux.dev/)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
@@ -15,7 +15,7 @@
 
 - **Android 7+** (Android 12+ recommended)
 - **[Termux from F-Droid](https://f-droid.org/en/packages/com.termux/)** - Required for compatibility
-- **2GB+ free storage** (4GB recommended)
+- **4GB+ free storage** (6GB recommended)
 - **4GB+ RAM** (6GB+ recommended)
 - **Stable internet connection**
 
@@ -88,6 +88,12 @@ chmod +x install.sh
 # Skip update check (faster)
 ./install.sh --skip-update-check
 
+# Use Node.js 26 instead of the default Node.js 24 LTS
+./install.sh --node 26
+
+# Unattended install (accept all defaults)
+./install.sh --yes
+
 # Show help
 ./install.sh --help
 ```
@@ -106,7 +112,7 @@ The installer automatically:
 2.  **Installs PRoot-Distro** with Debian
 3.  **Creates `openclaw` user** (dedicated non-root user)
 4.  **Installs NVM** (Node Version Manager)
-5.  **Installs Node.js v22** (latest LTS)
+5.  **Installs Node.js 24 LTS** (OpenClaw requires 24.16+; Node 26 via `--node 26`)
 6.  **Creates Android networking shim** (fixes Error 13 globally)
 7.  **Installs OpenClaw** (latest version from npm)
 8.  **Configures bash aliases** (convenient shortcuts)
@@ -272,7 +278,7 @@ For **OpenClaw-specific issues** (features, AI models, usage): Visit the officia
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | **Android** | 7+ | 12+ |
-| **Storage** | 2GB | 4GB |
+| **Storage** | 4GB | 6GB |
 | **RAM** | 4GB | 6GB+ |
 | **Termux** | F-Droid | Latest F-Droid |
 

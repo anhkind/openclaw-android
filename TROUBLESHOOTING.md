@@ -167,9 +167,10 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
 # Then continue with:
-nvm install 22
-nvm use 22
-npm install -g openclaw@latest
+nvm install 24
+nvm use 24
+nvm alias default 24
+npm install -g openclaw@latest --allow-scripts=openclaw
 ```
 
 **Why it happened**: NVM needs to be explicitly sourced after installation. The script now does this automatically with multiple fallback methods.
@@ -278,8 +279,8 @@ pkg install proot-distro -y
 proot-distro login debian
 
 # Option 2: Reinstall completely
-proot-distro remove debian -y
-proot-distro install debian
+proot-distro remove debian
+proot-distro install --name debian debian:trixie
 ```
 
 ---
@@ -369,7 +370,7 @@ start-claw
 npm list -g openclaw
 
 # If not installed:
-npm install -g openclaw@latest
+npm install -g openclaw@latest --allow-scripts=openclaw
 
 # If installed but not found, reload environment:
 source ~/.bashrc
@@ -389,7 +390,7 @@ which npm
 ```bash
 # Inside Debian
 npm cache clean --force
-npm install -g openclaw@latest --force
+npm install -g openclaw@latest --allow-scripts=openclaw --force
 ```
 
 ---
@@ -444,7 +445,7 @@ echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 
 # Reinstall OpenClaw:
-npm install -g openclaw@latest
+npm install -g openclaw@latest --allow-scripts=openclaw
 ```
 
 ## Performance Problems
@@ -584,8 +585,8 @@ NODE_OPTIONS="--require /root/openclaw-shim.cjs" openclaw gateway --bind 0.0.0.0
 
 4. **Remove old logs**:
    ```bash
-   # Inside Debian
-   rm -rf ~/.openclaw/logs/*.log.old
+   # Inside Debian (OpenClaw writes logs to /tmp/openclaw by default)
+   rm -rf /tmp/openclaw/*.log.old
    ```
 
 5. **Check space usage**:
@@ -603,7 +604,7 @@ NODE_OPTIONS="--require /root/openclaw-shim.cjs" openclaw gateway --bind 0.0.0.0
 ```bash
 # Inside Debian
 # Use smaller cache:
-npm install -g openclaw@latest --prefer-online --no-audit
+npm install -g openclaw@latest --allow-scripts=openclaw --prefer-online --no-audit
 ```
 
 ## API Configuration
@@ -673,14 +674,15 @@ start-claw
 
 ```bash
 # Inside Debian
-# View recent logs:
-tail -f ~/.openclaw/logs/gateway.log
+# Tail the Gateway log over RPC:
+openclaw logs --follow
 
-# Search for errors:
-grep -i error ~/.openclaw/logs/*.log
+# Raw log files (default location):
+ls -la /tmp/openclaw/
+grep -i error /tmp/openclaw/*.log
 
-# View full log:
-cat ~/.openclaw/logs/gateway.log | less
+# View a log file:
+less /tmp/openclaw/openclaw-*.log
 ```
 
 ---
@@ -751,7 +753,7 @@ nslookup api.openai.com
 ```bash
 # Inside Debian
 rm -rf ~/.openclaw
-npm install -g openclaw@latest --force
+npm install -g openclaw@latest --allow-scripts=openclaw --force
 openclaw onboard
 ```
 
@@ -759,8 +761,8 @@ openclaw onboard
 
 ```bash
 # In Termux
-proot-distro remove debian -y
-proot-distro install debian
+proot-distro remove debian
+proot-distro install --name debian debian:trixie
 
 # Then run installer again:
 ./install.sh
@@ -770,7 +772,7 @@ proot-distro install debian
 
 ```bash
 # In Termux
-proot-distro remove debian -y
+proot-distro remove debian
 pkg uninstall proot-distro -y
 pkg clean
 
@@ -799,7 +801,7 @@ If none of these solutions work:
    openclaw --version >> debug-report.txt
    
    echo "=== Logs ===" >> debug-report.txt
-   tail -100 ~/.openclaw/logs/gateway.log >> debug-report.txt
+   openclaw logs --limit 100 --plain >> debug-report.txt 2>&1 || tail -100 /tmp/openclaw/openclaw-*.log >> debug-report.txt 2>/dev/null
    ```
 
 2. **Search existing issues**:

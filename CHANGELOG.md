@@ -5,6 +5,43 @@ All notable changes to the OpenClaw Android Installer will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.10.19] - 2026-10-19
+
+### Changed
+- 🚀 **Updated for OpenClaw 2026.10.5** (`openclaw@latest`)
+  - OpenClaw now requires **Node.js >= 24.16.0 < 25 || >= 26.1.0** — Node 22 is no longer supported
+  - Installs **Node.js 24 LTS** by default (the line used by OpenClaw's Linux installer); use `--node 26` for the upstream-recommended Node 26
+  - Uses the npm lifecycle allow-list: `npm install -g openclaw@latest --allow-scripts=openclaw` on npm 11.16+/12
+  - Verifies OpenClaw's postinstall marker so a silently skipped lifecycle script is not reported as success
+  - Runs `openclaw doctor --fix --non-interactive` after installation, matching the upstream installer
+- ⬆️ **NVM v0.40.8** (was v0.40.1)
+- ⬆️ **Debian 13 "trixie"** via proot-distro OCI images (`debian:trixie`)
+- ⬆️ **proot-distro v5.10.0** compatibility
+  - Container detection via `proot-distro list -q` (the old `--installed-only` flag is gone)
+  - Installs with `install --name debian <image>` and falls back to the v4 CLI automatically
+  - Supports both `containers/<name>/rootfs` and legacy `installed-rootfs/<name>` layouts
+
+### Added
+- 🆕 64-bit architecture check (Node.js 24/26 have no 32-bit ARM builds)
+- 🆕 `--yes` / `-y` unattended mode and `--node <24|26>` option
+- 🆕 `claw-doctor` and `claw-dashboard` aliases; `claw-logs` now uses `openclaw logs --follow`
+- 🆕 `libatomic1` base package for the official Node.js ARM64 binaries
+- 🆕 Onboarding-first instructions (`openclaw onboard` writes `gateway.mode=local`)
+
+### Fixed
+- 🐛 Installer self-update no longer offers a downgrade when the local version is newer
+- 🐛 Setup no longer aborts when `.bashrc` has no NVM lines
+- 🐛 `.bashrc` block is replaced idempotently instead of appended on every run
+- 🐛 Sudo access uses `/etc/sudoers.d/90-openclaw` with `0440` permissions
+- 🐛 Setup script runs from inside the container rootfs (no reliance on Termux `$HOME` bind mounts)
+- 🐛 Android networking shim now only falls back to loopback when interfaces are unreadable
+- 🐛 Storage requirement raised to 4GB (OpenClaw unpacks to ~250MB, plus Node.js and Debian)
+
+### Why
+OpenClaw's 2026.10.x line dropped Node 22 and moved to npm's lifecycle-script
+allow-list. The previous installer pinned Node 22 and used the proot-distro v4
+CLI, so it could no longer produce a working OpenClaw installation.
+
 ## [2026.2.15] - 2026-02-13
 
 ### Fixed
