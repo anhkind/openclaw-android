@@ -46,7 +46,7 @@ Paste logs here
 <!-- Add any other context about the problem here -->
 
 ## Checklist
-- [ ] I have checked the [Troubleshooting Guide](../TROUBLESHOOTING.md)
+- [ ] I have checked the [With-PRoot troubleshooting guide](termux/with-proot/TROUBLESHOOTING.md) or the [No-PRoot troubleshooting guide](termux/no-proot/TROUBLESHOOTING.md)
 - [ ] I have searched for similar issues
 - [ ] I am using the latest version of the installer
 - [ ] I have included all relevant error messages and logs

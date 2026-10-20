@@ -10,7 +10,7 @@ set -e  # Exit on error
 
 # Script Configuration
 SCRIPT_VERSION="2026.10.19"
-SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh"
 VERSION_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/VERSION"
 REPO_URL="https://github.com/iyeoh88-svg/openclaw-android"
 

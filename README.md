@@ -8,394 +8,145 @@
 [![Stars](https://img.shields.io/github/stars/iyeoh88-svg/openclaw-android.svg)](https://github.com/iyeoh88-svg/openclaw-android/stargazers)
 [![Issues](https://img.shields.io/github/issues/iyeoh88-svg/openclaw-android.svg)](https://github.com/iyeoh88-svg/openclaw-android/issues)
 
-> **Automated installer for running OpenClaw AI agent system on Android devices via Termux**
+> **Automated installers for running the OpenClaw AI agent system on Android devices via Termux.**
+
+This repository provides **two independent installation options**. Choose the one that fits how you want to run OpenClaw, then follow its guide for setup, usage, updating, and troubleshooting.
 
 ---
-## 📋 Prerequisites
 
-- **Android 7+** (Android 12+ recommended)
-- **[Termux from F-Droid](https://f-droid.org/en/packages/com.termux/)** - Required for compatibility
-- **4GB+ free storage** (6GB recommended)
-- **4GB+ RAM** (6GB+ recommended)
-- **Stable internet connection**
+## 🚀 Choose Your Installation
 
-> ⚠️ **Critical**: Do NOT use Termux from Google Play Store. The F-Droid version is actively maintained and required for compatibility.
+| Option | Best for | Runtime |
+| --- | --- | --- |
+| **With PRoot (Debian)** | Debian packages, Homebrew, and the most established compatibility path. | Debian via `proot-distro`, Node.js via NVM, and a dedicated non-root `openclaw` user. |
+| **Without PRoot (Termux-native)** | A lighter install with no Debian container or `proot-distro`. | OpenClaw runs directly in Termux using `glibc-runner`, the official Node.js `linux-arm64` build, and embedded Android patches. |
 
-## 🌸Quick Start🌸
+Both installers are separate. They do not share runtime files or migrate an installation from one mode to the other.
 
-### One-Line Install (Recommended)
+## ⚡ Quick Start
 
-Open Termux and run:
+### Option 1: With PRoot (Debian)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh | bash
 ```
-**Wait 5-15 minutes** for automated installation to complete.
 
-### No-proot install (Termux-native)
+**Next step:** [Read the full With-PRoot setup guide →](termux/with-proot/README.md)
 
-To run OpenClaw directly in Termux without Debian or `proot-distro`, use the installer in [`termux/no-proot`](termux/no-proot/README.md):
+**Problems?** [With-PRoot troubleshooting →](termux/with-proot/TROUBLESHOOTING.md)
+
+### Option 2: Without PRoot (Termux-native)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh | bash
 ```
 
----
+**Next step:** [Read the full No-PRoot setup guide →](termux/no-proot/README.md)
+
+**Problems?** [No-PRoot troubleshooting →](termux/no-proot/TROUBLESHOOTING.md)
+
+**Wait 5-15 minutes** for the automated installation to complete.
+
+> ⚠️ **Use Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/), not Google Play.** The Play Store build is outdated and not supported.
+
+## 📋 Before You Start
+
+- **Termux from F-Droid**
+- **64-bit Android device**
+- **Android 7+** for PRoot, **Android 12+** for no-PRoot
+- **Storage:** 2GB+ for no-PRoot, 4GB+ for PRoot (6GB recommended)
+- **4GB+ RAM** (6GB+ recommended)
+- **Stable internet connection**
+
+Each installation guide contains the complete requirements, install options, post-install setup, daily commands, and troubleshooting for that mode.
+
+## 📚 Documentation
+
+- **[With-PRoot setup guide](termux/with-proot/README.md)** — Debian/`proot-distro` installation
+- **[With-PRoot troubleshooting](termux/with-proot/TROUBLESHOOTING.md)** — Common Debian/PRoot issues
+- **[No-PRoot setup guide](termux/no-proot/README.md)** — Termux-native installation
+- **[No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)** — Common Termux-native issues
+- **[QUICKREF.md](QUICKREF.md)** — Quick reference card
+- **[CHANGELOG.md](CHANGELOG.md)** — Version history
+- **[DISCLAIMER.md](DISCLAIMER.md)** — Project scope, attribution, and liability
+
+## ✨ Features
+
+- **Two installation modes** — Debian/PRoot or lightweight Termux-native
+- **No Android root required** — Both modes run without root access
+- **Android networking fixes** — Compatibility patches for Android/Termux limitations
+- **Update helpers** — Installer update checks and mode-specific update commands
+- **Flexible setup** — Choose Debian compatibility or a smaller Termux-only runtime
+
 ## ⚠️ Important Disclaimer
 
-**This project is an independent installer/automation tool created by the community.**
+**This is an independent community installer project, not the OpenClaw framework itself.**
 
--  **What this is**: An automated installation script that makes it easy to run OpenClaw on Android
--  **What this is NOT**: I did not create OpenClaw itself
--  **OpenClaw**: Visit the [official OpenClaw project](https://github.com/openclaw/openclaw) for the actual AI agent framework
--  **Creator**: This installer was created by [@iyeoh88-svg](https://github.com/iyeoh88-svg) to simplify the Android installation process
--  **Purpose**: To automate the complex setup process and make OpenClaw accessible on Android devices
+- OpenClaw is created and maintained by its own team: [openclaw/openclaw](https://github.com/openclaw/openclaw)
+- This project is not affiliated with or endorsed by the OpenClaw team
+- The installers download and configure OpenClaw; they do not claim ownership of it
+- The no-PRoot installer may apply local Android compatibility patches to the installed OpenClaw package
 
-**All credit for OpenClaw goes to its original creators and maintainers.**
+📄 **[Read the full disclaimer](DISCLAIMER.md)** for scope, attribution, and liability details.
 
-📄 **[Read Full Disclaimer](DISCLAIMER.md)** - Please read to understand the scope of this project
+## 🤝 Contributing
 
----
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-##  Features
+Ways to contribute:
 
--  **One-Command Installation** - Fully automated setup in 5-15 minutes
--  **Non-Root User** - Runs as dedicated `openclaw` user (supports Homebrew!)
--  **Auto-Update System** - Checks for installer updates automatically
--  **Android Networking Fix** - Automatically patches Error 13 globally
--  **Wide Compatibility** - Android 7-16, F-Droid/Play Store Termux
--  **Efficient** - Minimal storage footprint with PRoot Debian
--  **Secure** - Passwordless sudo for package installs when needed
--  **Battle-Tested** - 9 critical bugs fixed from community testing
-
-
-### Manual Download & Install
-
-If you prefer to review the script first:
-
-```bash
-# Download the installer
-curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
-
-# Review it (optional)
-less install.sh
-
-# Make executable
-chmod +x install.sh
-
-# Run it
-./install.sh
-```
-
-### Installation Options
-
-```bash
-# Force clean reinstall
-./install.sh --reinstall
-
-# Skip update check (faster)
-./install.sh --skip-update-check
-
-# Use Node.js 26 instead of the default Node.js 24 LTS
-./install.sh --node 26
-
-# Unattended install (accept all defaults)
-./install.sh --yes
-
-# Show help
-./install.sh --help
-```
-
-## Login & run OpenClaw setup wizard
-```bash
-proot-distro login debian --user openclaw
-openclaw onboard
-```
-
-## 📖 What Gets Installed
-
-The installer automatically:
-
-1.  **Updates Termux packages** (non-interactively)
-2.  **Installs PRoot-Distro** with Debian
-3.  **Creates `openclaw` user** (dedicated non-root user)
-4.  **Installs NVM** (Node Version Manager)
-5.  **Installs Node.js 24 LTS** (OpenClaw requires 24.16+; Node 26 via `--node 26`)
-6.  **Creates Android networking shim** (fixes Error 13 globally)
-7.  **Installs OpenClaw** (latest version from npm)
-8.  **Configures bash aliases** (convenient shortcuts)
-9.  **Sets up environment** (optimized for Android)
-
-**New in v2026.2.14**: Everything runs under the `openclaw` user with passwordless sudo access.
-
-##  Daily Usage
-
-### Starting OpenClaw (Two Sessions Required)
-
-**Session 1 - Gateway:**
-```bash
-# In Termux
-proot-distro login debian --user openclaw
-
-# Inside Debian
-start-claw
-```
-
-**Session 2 - TUI:**
-```bash
-# Swipe left in Termux for new session
-proot-distro login debian --user openclaw
-
-# Inside Debian
-openclaw tui
-```
-
-### Essential Commands
-
-**Inside Debian (as openclaw user):**
-
-| Command | Description |
-|---------|-------------|
-| `start-claw` | Launch OpenClaw gateway |
-| `openclaw tui` | Open terminal interface |
-| `openclaw onboard` | Automated configuration wizard |
-| `openclaw config` | Manual configuration menu |
-| `update-openclaw` | Update OpenClaw to latest |
-| `claw-status` | Check running processes |
-| `claw-logs` | View log files |
-
-**In Termux (not Debian):**
-
-| Command | Description |
-|---------|-------------|
-| `proot-distro login debian --user openclaw` | Enter Debian as openclaw user |
-| `termux-wake-lock` | Prevent CPU throttling |
-| `pkg update` | Update Termux packages |
-
-## 🔧 Configuration
-
-### Option 1: Automated Setup (Recommended)
-
-```bash
-# Inside Debian
-openclaw onboard
-```
-
-Walks you through setting up API keys, providers, and channels.
-
-### Option 2: Manual Configuration
-
-If onboarding skips steps (known issue on some Android versions):
-
-```bash
-# Inside Debian
-openclaw config
-```
-
-Lets you manually configure: model, skills, channels, workspace.
-
-### Option 3: Command Line
-
-```bash
-# Inside Debian
-openclaw config set providers.anthropic.apiKey "your-key-here"
-openclaw config set defaultProvider anthropic
-openclaw config set defaultModel "claude-sonnet-4-20250514"
-```
-
-See [GUIDE.md](GUIDE.md#post-installation-setup) for detailed configuration instructions.
-
-## 🆕 New Features in v2026.2.14
-
-### Homebrew Support
-
-You can now install Homebrew and other developer tools:
-
-```bash
-# Inside Debian as openclaw user
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Add to PATH
-echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
-source ~/.bashrc
-
-# Install packages
-brew install cowsay
-```
-
-### Non-Root Architecture Benefits
-
-- ✅ **Homebrew works** (refuses to run as root)
-- ✅ **Better security** (isolated user environment)
-- ✅ **Linux best practices** (proper user separation)
-- ✅ **Passwordless sudo** (still can install packages)
-
-## 🔄 Updating
-
-### Update OpenClaw
-
-```bash
-# Inside Debian
-update-openclaw
-```
-
-### Update Installer
-
-The installer auto-checks for updates. To force update:
-
-```bash
-# In Termux
-curl -O https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh
-chmod +x install.sh
-./install.sh --reinstall
-```
-
-### Upgrading from v2026.2.13 or Earlier
-
-**Important**: v2026.2.14 uses a different architecture (non-root user).
-
-See the [complete upgrade guide](GUIDE.md#upgrading-from-older-versions) for:
-- Fresh install method (recommended)
-- Manual upgrade preserving data
-- Migration steps
-
-##  Troubleshooting
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Error 13 during onboard | Fixed in v2026.2.13+. Update installer. |
-| Installation hangs | Fixed in v2026.2.10+. Update installer. |
-| "nvm: command not found" | Fixed in v2026.2.11+. Update installer. |
-| "Don't run as root!" | Fixed in v2026.2.14. Use `--user openclaw`. |
-| Slow performance | Run `termux-wake-lock` in Termux |
-| Out of storage | `npm cache clean --force` in Debian |
-
-### Getting Help
-
-1. **Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Comprehensive solutions
-2. **Check [GUIDE.md](GUIDE.md)** - Detailed setup instructions
-3. **Search [Issues](https://github.com/iyeoh88-svg/openclaw-android/issues)** - Known problems
-4. **Open new issue** - With Android version, error messages, and steps to reproduce
-
-For **OpenClaw-specific issues** (features, AI models, usage): Visit the official OpenClaw repository.
-
-## 📊 System Requirements
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **Android** | 7+ | 12+ |
-| **Storage** | 4GB | 6GB |
-| **RAM** | 4GB | 6GB+ |
-| **Termux** | F-Droid | Latest F-Droid |
-
-**Tested Configurations:**
--  Android 7 (basic support)
--  Android 12-16 (full support)
--  F-Droid Termux (recommended)
--  Play Store Termux (older, works)
-
-##  Documentation
-
-- **[README.md](README.md)** (you are here) - Quick start
-- **[GUIDE.md](GUIDE.md)** - Complete installation guide
-- **[QUICKREF.md](QUICKREF.md)** - Quick reference card
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history
-- **[DISCLAIMER.md](DISCLAIMER.md)** - Project scope & attribution
-
-##  Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-**Ways to contribute:**
--  Report bugs with detailed logs
--  Suggest features or improvements
--  Improve documentation
--  Test on different devices/Android versions
--  Submit pull requests
+- Report bugs with detailed logs
+- Suggest features or documentation improvements
+- Test on different Android devices and versions
+- Submit pull requests
 
 ## 🙏 Acknowledgments
 
-### OpenClaw Framework
-**All credit for the OpenClaw AI agent system goes to its original creators and maintainers.**
-- Official OpenClaw: [openclaw/openclaw](https://github.com/openclaw/openclaw)
-- This installer is a community contribution to make OpenClaw accessible on Android
-
-### This Installer Project
-- **Created by**: [@iyeoh88-svg](https://github.com/iyeoh88-svg)
-- **Purpose**: Automated installation tool for Android/Termux
-- **Status**: Not affiliated with or endorsed by the official OpenClaw team
-
-### Community & Technologies
-- **Termux** - For making Linux on Android possible
-- **NVM** - Node Version Manager
-- **PRoot** - Userspace implementation of chroot
-- **Debian** - Stable base system
-- **Community testers** - Who reported bugs and tested fixes
-
-**Special thanks** to everyone who tested v2026.2.10-2.14 and reported issues. Your detailed bug reports made this release possible!
+- **OpenClaw** — The AI agent framework, created and maintained by the OpenClaw team and contributors
+- **[@iyeoh88-svg](https://github.com/iyeoh88-svg) and the [upstream openclaw-android project](https://github.com/iyeoh88-svg/openclaw-android)** — Original installer, documentation, and Android/Termux setup work this fork builds on
+- **[AidanPark/openclaw-android](https://github.com/AidanPark/openclaw-android)** — Android compatibility patch work used by the no-PRoot installer
+- **Termux and F-Droid** — The terminal environment and distribution channel for Android
+- **Debian, PRoot, and `proot-distro`** — Runtime foundation for the With-PRoot option
+- **Node.js, NVM, and npm** — JavaScript runtime and package tooling
+- **`glibc-runner` and Termux package maintainers** — glibc runtime support used by the no-PRoot option
+- **Community testers and contributors** — Everyone who reported bugs, tested devices, and improved the guides
 
 ## 📝 License
 
-This installer is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
+This installer project is licensed under the **MIT License** — see [LICENSE](LICENSE).
 
-**Note**: This license covers the installer only. OpenClaw has its own license - see the official OpenClaw repository.
+OpenClaw has its own license; see the official OpenClaw repository for details.
 
 ## 📞 Support & Community
 
-### For Installer Issues
-- **Bug Reports**: [GitHub Issues](https://github.com/iyeoh88-svg/openclaw-android/issues)
-- **Questions**: [GitHub Discussions](https://github.com/iyeoh88-svg/openclaw-android/discussions)
-- **Feature Requests**: [GitHub Issues](https://github.com/iyeoh88-svg/openclaw-android/issues)
+### Before asking for help
 
-### For OpenClaw Issues
-- Visit the **official OpenClaw repository**
-- Check **OpenClaw's documentation**
-- Join **OpenClaw's community channels**
+1. Open the setup guide for your installation mode:
+   - [With-PRoot setup guide](termux/with-proot/README.md)
+   - [No-PRoot setup guide](termux/no-proot/README.md)
+2. Check the matching troubleshooting guide:
+   - [With-PRoot troubleshooting](termux/with-proot/TROUBLESHOOTING.md)
+   - [No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)
+3. Include your installation mode, device model, Android version, Termux source, installer command, and relevant error output.
 
-**Remember**: This installer automates setup. For OpenClaw features, AI models, and functionality, contact the OpenClaw team.
+### Where to ask
 
-##  What's Next?
+- **Installer issues and feature requests:** Use the upstream project's [GitHub Issues](https://github.com/iyeoh88-svg/openclaw-android/issues). Issue and discussion tracking is not enabled on this fork.
+- **Questions and general help:** Use the upstream [GitHub Discussions](https://github.com/iyeoh88-svg/openclaw-android/discussions).
+- **This fork's source code:** [anhkind/openclaw-android](https://github.com/anhkind/openclaw-android).
+- **OpenClaw framework issues:** Visit the [official OpenClaw repository](https://github.com/openclaw/openclaw) or the [OpenClaw documentation](https://docs.openclaw.ai).
 
-After installation:
-
-1.  **Configure API keys**: `openclaw onboard` or `openclaw config`
-2.  **Start the gateway**: `start-claw`
-3.  **Open the TUI**: `openclaw tui` (in new session)
-4.  **Read OpenClaw docs**: Learn about OpenClaw's features
-5.  **Join the community**: Connect with other OpenClaw users
-
-## 🌟 Star History
-
-If this installer helped you, please ⭐ star the repository!
-
-It helps others discover the project and motivates continued development.
-
----
-
-##  Project Stats
-
-- **Version**: 2026.2.14
-- **Release Date**: February 13, 2026
-- **Status**: Stable
-- **Active Development**: Yes
-- **Community Tested**: Yes (Android 7-16)
-- **Critical Bugs Fixed**: 9 (v2026.2.10-2.14)
-
----
+Please do not report OpenClaw framework bugs through the installer project. OpenClaw features, models, APIs, and runtime behavior are handled by the OpenClaw team.
 
 ## 🔗 Quick Links
 
-- **Download**: [install.sh](https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh)
-- **Issues**: [Report a bug](https://github.com/iyeoh88-svg/openclaw-android/issues/new)
-- **Discussions**: [Ask questions](https://github.com/iyeoh88-svg/openclaw-android/discussions)
-- **Changelog**: [Version history](CHANGELOG.md)
-- **Guide**: [Detailed instructions](GUIDE.md)
+- **With PRoot:** [Installer](https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh) · [Guide](termux/with-proot/README.md) · [Troubleshooting](termux/with-proot/TROUBLESHOOTING.md)
+- **Without PRoot:** [Installer](https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh) · [Guide](termux/no-proot/README.md) · [Troubleshooting](termux/no-proot/TROUBLESHOOTING.md)
+- **Changelog:** [Version history](CHANGELOG.md)
+- **Disclaimer:** [Project scope](DISCLAIMER.md)
 
 ---
 
 **Made with ❤️ for the Android AI community**
 
-*Bringing AI agents to mobile devices, one install at a time* 
+*Bringing AI agents to mobile devices, one install at a time*

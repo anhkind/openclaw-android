@@ -184,7 +184,7 @@ This update ensures proper attribution to OpenClaw's creators and clarifies that
 - ✅ Fully automated installation script with progress indicators
 - 🔄 Auto-update system that checks for new installer versions
 - 🛠️ Comprehensive error handling and recovery
-- 📝 Detailed documentation (README, GUIDE, TROUBLESHOOTING)
+- 📝 Detailed documentation (README, guides, troubleshooting)
 - 🎨 Colorful CLI output with status indicators
 - ⚙️ Automatic creation of convenience aliases
 - 🔧 Android Error 13 networking fix (shim system)
@@ -203,8 +203,8 @@ This update ensures proper attribution to OpenClaw's creators and clarifies that
 
 ### Documentation
 - README.md with quick start guide
-- GUIDE.md with detailed instructions
-- TROUBLESHOOTING.md with solutions to common issues
+- termux/with-proot/README.md with detailed instructions
+- termux/with-proot/TROUBLESHOOTING.md with solutions to common issues
 - Inline script documentation
 - Usage examples and best practices
 
@@ -287,7 +287,7 @@ None currently. We will document any security-related updates here.
 
 The installer automatically checks for updates. To manually check:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh | bash
 ```
 
 **Reporting Issues:**

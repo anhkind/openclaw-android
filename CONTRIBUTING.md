@@ -44,7 +44,9 @@ Thank you for your interest in contributing! This document provides guidelines f
 ### Reporting Bugs
 
 Before creating a bug report:
-1. Check the [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide
+1. Check the troubleshooting guide for your installation mode:
+   - With PRoot: [TROUBLESHOOTING.md](termux/with-proot/TROUBLESHOOTING.md)
+   - Without PRoot: [TROUBLESHOOTING.md](termux/no-proot/TROUBLESHOOTING.md)
 2. Search [existing issues](https://github.com/iyeoh88-svg/openclaw-android/issues)
 3. Update to the latest version
 
@@ -135,10 +137,10 @@ git checkout -b feature/my-feature
 1. **Test the installer:**
    ```bash
    # Make script executable
-   chmod +x install.sh
+   chmod +x termux/with-proot/install.sh
    
    # Test installation
-   ./install.sh --skip-update-check
+   ./termux/with-proot/install.sh --skip-update-check
    ```
 
 2. **Test on clean environment:**
@@ -147,7 +149,7 @@ git checkout -b feature/my-feature
    proot-distro remove debian
    
    # Test fresh install
-   ./install.sh --reinstall
+   ./termux/with-proot/install.sh --reinstall
    ```
 
 3. **Test update mechanism:**

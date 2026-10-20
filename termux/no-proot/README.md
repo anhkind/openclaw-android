@@ -61,6 +61,23 @@ openclaw tui
 
 The dashboard is available with `openclaw dashboard`.
 
+### Manual configuration
+
+If onboarding skips steps, use the configuration menu:
+
+```bash
+openclaw config
+```
+
+Or configure from the command line:
+
+```bash
+openclaw config set providers.anthropic.apiKey "your-api-key-here"
+openclaw config set defaultProvider anthropic
+openclaw config set defaultModel "claude-sonnet-4-20250514"
+openclaw config list
+```
+
 ## Options
 
 | Option | Description |
@@ -139,6 +156,7 @@ No installer scripts or downloads are stored in `~/.openclaw`; that directory be
 | --- | --- |
 | `start-claw` | Start the OpenClaw gateway on loopback. |
 | `openclaw onboard` | First-time setup wizard. |
+| `openclaw config` | Manual configuration menu. |
 | `openclaw tui` | Terminal interface. |
 | `openclaw dashboard` | Open the browser control UI. |
 | `openclaw doctor` | Run health checks and repairs. |
@@ -150,6 +168,8 @@ No installer scripts or downloads are stored in `~/.openclaw`; that directory be
 | `claw-ps` | List OpenClaw processes. |
 
 ## Troubleshooting
+
+For the full guide, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ### `openclaw: command not found`
 
@@ -180,6 +200,10 @@ If `openclaw doctor --fix` reports `EACCES`, run the repair mode:
 ```bash
 bash ~/.openclaw-android/installer/install.sh --repair --yes
 ```
+
+## Alternative: with PRoot
+
+If you need Debian packages, Homebrew, or the more established compatibility path, use the [With-PRoot installer](../with-proot/README.md).
 
 ## Notes
 
