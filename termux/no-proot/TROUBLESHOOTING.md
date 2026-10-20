@@ -7,7 +7,7 @@ The no-PRoot installer currently:
 - Targets 64-bit ARM (`arm64`) Termux, including the OnePlus 11.
 - Uses Termux `pacman` and `glibc-runner` to provide the glibc loader.
 - Installs the official Node.js `linux-arm64` tarball and verifies it against `SHASUMS256.txt`.
-- Installs OpenClaw pinned to `2026.10.2` by default.
+- Installs OpenClaw pinned to `2026.10.5` by default.
 - Applies the Android compatibility patches from [AidanPark/openclaw-android](https://github.com/AidanPark/openclaw-android).
 
 Run these first:
@@ -143,12 +143,12 @@ bash ~/.openclaw-android/installer/install.sh --update --yes
 
 ### Patch warnings: `NOMATCH`, `WRITEFAIL`, or `NOTARGET`
 
-The embedded patches are verified against OpenClaw **2026.10.2**. A newer OpenClaw release may change the files the patches expect.
+The embedded patches are verified against OpenClaw **2026.10.5**. A newer OpenClaw release may change the files the patches expect.
 
 Reinstall the verified version:
 
 ```bash
-update-claw --openclaw 2026.10.2
+update-claw --openclaw 2026.10.5
 ```
 
 Or repair the current installation:
@@ -241,7 +241,7 @@ update-claw
 ```bash
 update-claw --latest
 update-claw --node 26
-update-claw --openclaw 2026.10.2
+update-claw --openclaw 2026.10.5
 update-claw --reinstall
 ```
 
@@ -601,7 +601,7 @@ update-claw
 
 ```bash
 # Verified version
-update-claw --openclaw 2026.10.2
+update-claw --openclaw 2026.10.5
 
 # Latest release; patches may need updating
 update-claw --latest

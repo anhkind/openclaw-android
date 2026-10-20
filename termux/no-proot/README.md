@@ -7,7 +7,7 @@ The installer uses:
 - Termux `pacman` and `glibc-runner` for the glibc loader
 - The official Node.js `linux-arm64` tarball, verified against its `SHASUMS256.txt`
 - The Android compatibility patches from [AidanPark/openclaw-android](https://github.com/AidanPark/openclaw-android)
-- OpenClaw pinned to `2026.10.2` by default, because that is the version the embedded patches were verified against
+- OpenClaw pinned to `2026.10.5` by default, because that is the version the embedded patches were verified against
 
 It only installs `curl`, `tar`, `xz-utils`, `coreutils`, `pacman`, and (optionally) `resolv-conf`. No C/C++ toolchain: nothing is compiled, so `git`, `python`, `make`, `cmake`, `clang`, and `binutils` are not needed. Install them yourself if you need them for something else.
 
@@ -104,7 +104,7 @@ Examples:
 bash install.sh --node 26
 
 # Install a specific OpenClaw version
-bash install.sh --openclaw 2026.10.2
+bash install.sh --openclaw 2026.10.5
 
 # Unattended install
 bash install.sh --yes
@@ -123,7 +123,7 @@ update-claw
 ```bash
 update-claw --latest
 update-claw --node 26
-update-claw --openclaw 2026.10.2
+update-claw --openclaw 2026.10.5
 update-claw --reinstall
 ```
 
@@ -194,10 +194,10 @@ The launcher is also available directly at `$PREFIX/bin/openclaw`.
 
 ### Patch warnings during install or update
 
-The embedded patches are verified against OpenClaw `2026.10.2`. Installing a newer version with `--latest` may produce `NOMATCH` or `WRITEFAIL` warnings. Reinstall the verified version, or update the patches before using a newer release:
+The embedded patches are verified against OpenClaw `2026.10.5`. Installing a newer version with `--latest` may produce `NOMATCH` or `WRITEFAIL` warnings. Reinstall the verified version, or update the patches before using a newer release:
 
 ```bash
-update-claw --openclaw 2026.10.2
+update-claw --openclaw 2026.10.5
 ```
 
 If `openclaw doctor --fix` reports `EACCES`, run the repair mode:

@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 ################################################################################
 # OpenClaw Android Installer - No PRoot / No Debian
-# Version: 2026.10.20
+# Version: 2026.10.21
 # Description: Install OpenClaw directly inside Termux, without proot-distro
 #              and without a Linux distribution. Uses the glibc dynamic linker
 #              from Termux's glibc-runner package, official Node.js linux-arm64
@@ -15,15 +15,17 @@ set -e
 # ------------------------------------------------------------------------------
 # Script configuration
 # ------------------------------------------------------------------------------
-SCRIPT_VERSION="2026.10.20"
+SCRIPT_VERSION="2026.10.21"
 SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh"
 VERSION_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/VERSION"
 REPO_URL="https://github.com/anhkind/openclaw-android"
 REFERENCE_URL="https://github.com/AidanPark/openclaw-android"
 
 # OpenClaw version verified against the embedded Android patches.
+# The patches are re-verified on every bump: `openclaw@2026.10.5` with
+# `@openclaw/fs-safe@0.25.0` applies all 21 targets with problems=0.
 # Use --latest or --openclaw to override (patches may need updating).
-OPENCLAW_VERIFIED_VERSION="2026.10.2"
+OPENCLAW_VERIFIED_VERSION="2026.10.5"
 OPENCLAW_VERSION="${OPENCLAW_VERSION:-$OPENCLAW_VERIFIED_VERSION}"
 OPENCLAW_PACKAGE="openclaw"
 
@@ -2473,7 +2475,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --openclaw)
             if [ -z "${2:-}" ]; then
-                log_error "--openclaw requires a version (for example 2026.10.2) or 'latest'"
+                log_error "--openclaw requires a version (for example 2026.10.5) or 'latest'"
                 exit 1
             fi
             OPENCLAW_VERSION="$2"

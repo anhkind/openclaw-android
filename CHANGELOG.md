@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧩 **Termux-native installer without PRoot** (`termux/no-proot/install.sh`)
   - Runs OpenClaw directly in Termux with `glibc-runner` and the official Node.js `linux-arm64` tarball
   - Verifies the Node.js download against `SHASUMS256.txt`
-  - Embeds Android compatibility and gateway-lock patches, verified against OpenClaw `2026.10.2`
+  - Embeds Android compatibility and gateway-lock patches, verified against OpenClaw `2026.10.5`
   - Supports `--node 24`, `--node 26`, `--openclaw <version>`, `--latest`, `--update`, `--repair`, `--reinstall`, `--yes`, and `--skip-update-check`
   - Generates `update-claw`, `start-claw`, and `systemctl` helpers under `~/.openclaw-android`
   - Keeps installer and runtime files in `~/.openclaw-android`; OpenClaw data remains in `~/.openclaw`
@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ℹ️ The PRoot and no-PRoot modes are independent; no automatic migration is provided
 - 🔢 Installer versions synchronized at `2026.10.20` across `VERSION`, `termux/no-proot/install.sh`, and `termux/with-proot/install.sh`
   - One `VERSION` file drives the self-update prompt of both installers, so the three values have to move together
+- 🎯 **OpenClaw pin moved to `2026.10.5`** (`termux/no-proot/install.sh`)
+  - Carries the model-provider fixes that motivated the move
+  - The embedded patches were re-verified against `openclaw@2026.10.5` with `@openclaw/fs-safe@0.25.0`: all 21 targets apply with `problems=0`, a second run reports everything as already patched, and every patched bundle still parses
+  - The Node.js floor is unchanged (`>=24.16.0 <25 || >=26.1.0`), so the default Node 24 LTS install still satisfies it
+  - Existing installs move forward with `update-claw`; OpenClaw migrates the state database forward, and `doctor` now has time to finish
+- 🔢 Installer versions bumped to `2026.10.21` (`VERSION` and both `SCRIPT_VERSION`s) so running installs are offered the update
 - 🪶 **No Termux toolchain by default** (`termux/no-proot/install.sh`)
   - Installs only `curl`, `tar`, `xz-utils`, `coreutils`, `pacman` (+ optional `resolv-conf`); `git`, `python`, `make`, `cmake`, `clang`, and `binutils` are gone
   - Nothing is compiled (npm runs with `--ignore-scripts`), so that toolchain was several hundred MB of unused packages

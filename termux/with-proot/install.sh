@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 ################################################################################
 # OpenClaw Android Installer
-# Version: 2026.10.20
+# Version: 2026.10.21
 # Description: Automated installer for OpenClaw on Android via Termux
 # Repository: https://github.com/anhkind/openclaw-android
 # Upstream reference: https://github.com/iyeoh88-svg/openclaw-android
@@ -10,7 +10,7 @@
 set -e  # Exit on error
 
 # Script Configuration
-SCRIPT_VERSION="2026.10.20"
+SCRIPT_VERSION="2026.10.21"
 SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh"
 VERSION_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/VERSION"
 REPO_URL="https://github.com/anhkind/openclaw-android"
