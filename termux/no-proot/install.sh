@@ -2122,11 +2122,6 @@ export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
 export OPENCLAW_NO_AUTO_UPDATE=1
 
-# Bind mode used by start-claw when --lan is not given. Loopback
-# keeps the gateway on this phone; use `start-claw --lan` (or set
-# OPENCLAW_GATEWAY_BIND=lan) to reach it from other devices on the network.
-export OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
-
 # The generated helper owns the --lan handling and prints the LAN URL.
 # Remove an old alias before defining the function: aliases are expanded while
 # this file is parsed, so `start-claw() {` would otherwise become the alias
@@ -2266,7 +2261,7 @@ _oa_lan_ip() {
 }
 
 # This launcher supports exactly two modes: loopback (default) and LAN.
-BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
+BIND="loopback"
 ARGS=()
 for arg in "$@"; do
     case "$arg" in
@@ -2282,14 +2277,6 @@ for arg in "$@"; do
             ;;
     esac
 done
-
-case "$BIND" in
-    loopback|lan) ;;
-    *)
-        echo "start-claw: OPENCLAW_GATEWAY_BIND must be 'loopback' or 'lan'." >&2
-        exit 2
-        ;;
-esac
 
 PORT=18789
 for ((i = 0; i < ${#ARGS[@]}; i++)); do

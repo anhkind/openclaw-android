@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Keeps installer and runtime files in `~/.openclaw-android`; OpenClaw data remains in `~/.openclaw`
 - 🌐 **Optional LAN binding for the gateway** (`termux/no-proot/install.sh`)
   - `start-claw --lan` uses OpenClaw's `lan` bind mode (which listens on `0.0.0.0`), prints a warning, and shows the best-effort phone LAN URL with the correct port
-  - Only loopback (default) and LAN are supported; `start-claw` and `start-openclaw.sh` honor `OPENCLAW_GATEWAY_BIND=loopback|lan`
+  - Only loopback (default) and LAN are supported; `start-claw --lan` selects LAN for that invocation
   - The default stays loopback, and the gateway token still protects access when it is exposed
 - 🔑 **`claw-token` shell function** (`termux/no-proot/install.sh`)
   - Prints the gateway token from `~/.bashrc`, and configures one with `openclaw doctor --generate-gateway-token` when none exists yet (then tells you to restart the gateway)

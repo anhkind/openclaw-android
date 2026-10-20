@@ -75,15 +75,7 @@ start-claw --lan
 
 This uses OpenClaw's `lan` bind mode (which listens on `0.0.0.0`), prints a warning, and shows the best-effort LAN URL (for example `http://192.168.0.15:18789`). Use `claw-token` to print the token the client needs. Before exposing it, check that authentication is enabled with `openclaw config get gateway.auth.mode` — do not use LAN mode if the result is `none`.
 
-To make the setting permanent, export it before the gateway starts:
-
-```bash
-echo 'export OPENCLAW_GATEWAY_BIND=lan' >> ~/.bashrc
-source ~/.bashrc
-start-claw
-```
-
-`start-claw` intentionally supports only two modes: loopback (the default) and LAN (`--lan` or `OPENCLAW_GATEWAY_BIND=lan`). It does not accept `--bind` or the other OpenClaw bind modes.
+LAN mode applies to that invocation only; the next `start-claw` returns to loopback unless you pass `--lan` again. `start-claw` intentionally supports only two modes: loopback (the default) and LAN (`--lan`). It does not accept `--bind` or the other OpenClaw bind modes.
 
 Keep the gateway on loopback unless you need LAN access. When it is exposed, token authentication still applies: do not forward the port to the internet or disable authentication. LAN mode is intended for trusted networks only.
 
