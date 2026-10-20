@@ -5,6 +5,30 @@ All notable changes to the OpenClaw Android Installer will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- 🧩 **Termux-native installer without PRoot** (`termux/no-proot/install.sh`)
+  - Runs OpenClaw directly in Termux with `glibc-runner` and the official Node.js `linux-arm64` tarball
+  - Verifies the Node.js download against `SHASUMS256.txt`
+  - Embeds Android compatibility and gateway-lock patches, verified against OpenClaw `2026.10.2`
+  - Supports `--node 24`, `--node 26`, `--openclaw <version>`, `--latest`, `--update`, `--repair`, `--reinstall`, `--yes`, and `--skip-update-check`
+  - Generates `update-claw`, `start-claw`, and `systemctl` helpers under `~/.openclaw-android`
+  - Keeps installer and runtime files in `~/.openclaw-android`; OpenClaw data remains in `~/.openclaw`
+
+### Changed
+- 📦 Moved the Debian/PRoot installer from `install.sh` to `termux/with-proot/install.sh`
+- 📚 Split documentation by installation mode:
+  - `termux/with-proot/README.md` and `termux/with-proot/TROUBLESHOOTING.md`
+  - `termux/no-proot/README.md` and `termux/no-proot/TROUBLESHOOTING.md`
+- 🏠 Simplified the root `README.md` into a landing page linking to each mode's guide
+- ⚠️ Updated `DISCLAIMER.md` to cover both independent installers
+- 🔗 Updated contribution and bug-report documentation for the two installation paths
+- ℹ️ The PRoot and no-PRoot modes are independent; no automatic migration is provided
+
+### Removed
+- 🗑️ Removed the root `install.sh`, `GUIDE.md`, and `TROUBLESHOOTING.md` after moving their content under `termux/with-proot/`
+
 ## [2026.10.19] - 2026-10-19
 
 ### Changed
@@ -208,7 +232,7 @@ This update ensures proper attribution to OpenClaw's creators and clarifies that
 - Inline script documentation
 - Usage examples and best practices
 
-## [Unreleased]
+## Future Plans
 
 ### Planned
 - 🎥 Video tutorial
@@ -285,16 +309,20 @@ None currently. We will document any security-related updates here.
 
 **How to Update:**
 
-The installer automatically checks for updates. To manually check:
+The installer automatically checks for updates. To manually update, use the command for your installation mode:
 ```bash
+# With PRoot (Debian)
 curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh | bash
+
+# Without PRoot (Termux-native)
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh | bash
 ```
 
 **Reporting Issues:**
 
 Found a bug? Please report it:
 - GitHub Issues: https://github.com/iyeoh88-svg/openclaw-android/issues
-- Include: Android version, Termux version, error message, steps to reproduce
+- Include: installation mode (with PRoot or no-PRoot), Android version, Termux version, error message, and steps to reproduce
 
 ---
 
