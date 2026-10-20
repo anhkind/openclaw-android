@@ -306,6 +306,34 @@ bash ~/.openclaw-android/installer/install.sh --repair --yes
 
 ## Gateway and process issues
 
+### `Gateway start blocked: existing config is missing gateway.mode`
+
+OpenClaw refuses to start the gateway when a config file exists without `gateway.mode`, because a missing mode looks like a clobbered configuration. On a fresh install this happens when `start-claw` is run before onboarding: onboarding sets the mode, and older versions of this installer wrote the config (`update.checkOnStart`) before doing so.
+
+Fix it with either of these:
+
+```bash
+openclaw onboard --mode local      # first-time setup; also sets gateway.mode
+openclaw config set gateway.mode local   # mode only, without onboarding
+```
+
+`bash ~/.openclaw-android/installer/install.sh --repair --yes` also sets it. Only on a throwaway setup, `start-claw --allow-unconfigured` bypasses the check without repairing the config.
+
+### `requires repair: missing table …`
+
+The state database at `~/.openclaw/state/openclaw.sqlite` does not match this OpenClaw version's schema — usually a partially applied migration, or a database left by a different/older OpenClaw in the same `~/.openclaw`. Let `doctor` finish the migration:
+
+```bash
+openclaw doctor --fix
+```
+
+If it still refuses, move the state aside and let it be recreated. `openclaw.json` (providers, channels, credentials) is separate and is kept; local session history and leases are lost:
+
+```bash
+mv ~/.openclaw/state ~/.openclaw/state.bak.$(date +%Y%m%d-%H%M%S)
+start-claw
+```
+
 ### Gateway will not start
 
 ```bash

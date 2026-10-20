@@ -2029,17 +2029,39 @@ openclaw_run() {
 }
 
 configure_openclaw_settings() {
-    log_step "Configuring OpenClaw update policy..."
+    log_step "Configuring OpenClaw gateway settings..."
 
     if [ ! -x "$BIN_DIR/openclaw" ]; then
-        log_warn "OpenClaw launcher missing - update policy not configured"
+        log_warn "OpenClaw launcher missing - gateway settings not configured"
         return 0
     fi
 
+    mkdir -p "$HOME/.openclaw"
+    local out current_mode
+
+    # `openclaw gateway` refuses to start when a config file exists but has no
+    # gateway.mode - it treats that as clobbered config and tells you to run
+    # onboarding again. Writing any other key first creates exactly that state,
+    # so the mode is set before anything else. A client/remote setup keeps its
+    # own value.
+    current_mode=$(openclaw_run 60 config get gateway.mode 2>/dev/null \
+        | tail -1 | tr -d '"\r' | tr -d '[:space:]' || true)
+    case "$current_mode" in
+        local|remote)
+            log_info "gateway.mode is already '${current_mode}' - leaving it"
+            ;;
+        *)
+            if out=$(openclaw_run 90 config set gateway.mode local 2>&1); then
+                log_success "Set gateway.mode=local (this host runs the gateway)"
+            else
+                log_warn "Could not set gateway.mode=local (continuing)"
+                printf '%s\n' "$out" | tail -3 | sed 's/^/  /'
+            fi
+            ;;
+    esac
+
     # OPENCLAW_NO_AUTO_UPDATE=1 already covers the installer run; persisting the
     # setting also disables the Gateway's start-up update check.
-    mkdir -p "$HOME/.openclaw"
-    local out
     if out=$(openclaw_run 90 config set update.checkOnStart false 2>&1); then
         log_success "Disabled OpenClaw update checks on gateway start"
     else
@@ -2051,13 +2073,25 @@ configure_openclaw_settings() {
 run_doctor() {
     log_step "Running OpenClaw doctor (migrations)..."
 
+    # The first run creates and migrates the state database, which takes minutes
+    # on a phone. The old 300s cap could kill it mid-migration, leaving a state
+    # database that the gateway then refuses to open - so allow it to finish.
+    local doctor_timeout=900 out rc=0
     export PATH="$BIN_DIR:$NODE_DIR/bin:$HOME/.local/bin:$PATH"
+    log_info "First run creates and migrates the state database - this can take a few minutes."
+
     if command -v timeout &>/dev/null; then
-        timeout 300 "$BIN_DIR/openclaw" doctor --fix --non-interactive \
-            || log_warn "openclaw doctor reported issues (non-fatal)"
+        out=$(timeout "$doctor_timeout" "$BIN_DIR/openclaw" doctor --fix --non-interactive 2>&1) || rc=$?
     else
-        "$BIN_DIR/openclaw" doctor --fix --non-interactive \
-            || log_warn "openclaw doctor reported issues (non-fatal)"
+        out=$("$BIN_DIR/openclaw" doctor --fix --non-interactive 2>&1) || rc=$?
+    fi
+
+    if [ "$rc" -eq 0 ]; then
+        log_success "State database and configuration checked"
+    else
+        log_warn "openclaw doctor reported issues (exit code $rc)"
+        printf '%s\n' "$out" | tail -15 | sed 's/^/  /'
+        log_info "If the gateway refuses to start, run 'openclaw doctor --fix' again in a shell."
     fi
 }
 

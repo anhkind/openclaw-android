@@ -56,6 +56,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📛 Path patching survives awkward file names (`termux/no-proot/install.sh`): the `for f in $files` word-splitting loops are now line-by-line reads
 - 🛡️ An existing Debian/PRoot installation is detected and called out (`termux/no-proot/install.sh`) instead of being silently left to share `~/.openclaw`
 - ⌨️ Prompts no longer print a `/dev/tty` redirection error when there is no controlling terminal (both installers); the documented default is used instead
+- 🚪 **`start-claw` is no longer blocked by the installer's own config write** (`termux/no-proot/install.sh`)
+  - Writing `update.checkOnStart` created a config file without `gateway.mode`, which OpenClaw treats as clobbered configuration and refuses to start from
+  - `gateway.mode=local` is now set (only when unset, so a client/remote setup keeps its value) before any other key
+- ⏱️ **`openclaw doctor --fix` gets enough time to migrate the state database** (`termux/no-proot/install.sh`)
+  - The 300-second cap could kill the first migration mid-way and leave a state database the gateway then refuses to open; it is now 900 seconds
+  - A failure shows the tail of doctor's output instead of a single "non-fatal" line that is easy to miss before a gateway that will not start
 
 ### Security
 - 🔐 **pacman package signatures are now actually verified** (`termux/no-proot/install.sh`)
