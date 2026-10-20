@@ -1,12 +1,12 @@
 # 🦞 OpenClaw for Android (Termux)
 <img width="540" height="405" alt="image" src="https://github.com/user-attachments/assets/e9a9d875-74d1-410d-a9bf-3e1be55f4cb4" />
 
-[![Version](https://img.shields.io/badge/version-2026.10.19-blue.svg)](https://github.com/iyeoh88-svg/openclaw-android)
+[![Version](https://img.shields.io/badge/version-2026.10.21-blue.svg)](https://github.com/anhkind/openclaw-android)
 [![Android](https://img.shields.io/badge/Android-12%2B-green.svg)](https://www.android.com/)
 [![Termux](https://img.shields.io/badge/Termux-Required-orange.svg)](https://termux.dev/)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/iyeoh88-svg/openclaw-android.svg)](https://github.com/iyeoh88-svg/openclaw-android/stargazers)
-[![Issues](https://img.shields.io/github/issues/iyeoh88-svg/openclaw-android.svg)](https://github.com/iyeoh88-svg/openclaw-android/issues)
+[![Stars](https://img.shields.io/github/stars/anhkind/openclaw-android.svg)](https://github.com/anhkind/openclaw-android/stargazers)
+[![Issues](https://img.shields.io/github/issues/anhkind/openclaw-android.svg)](https://github.com/anhkind/openclaw-android/issues)
 
 > **Automated installers for running the OpenClaw AI agent system on Android devices via Termux.**
 
