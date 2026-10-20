@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🗑️ Removed the root `install.sh`, `GUIDE.md`, and `TROUBLESHOOTING.md` after moving their content under `termux/with-proot/`
 
 ### Fixed
+- 🩹 **Re-sourcing `.bashrc` no longer breaks on the old `start-claw` alias** (`termux/no-proot/install.sh`)
+  - An alias still active in the current shell was expanded while parsing `start-claw() {`, producing `syntax error near unexpected token '('`; the generated block now clears it first
 - 🔁 **Installer self-update can no longer loop** (`termux/no-proot/install.sh`, `termux/with-proot/install.sh`)
   - A downloaded installer is re-executed only when its `SCRIPT_VERSION` is actually newer, and at most once per run
   - Previously, a `VERSION` file ahead of the published script re-downloaded and re-executed forever, a loop `update-claw` (`--yes`) could not interrupt

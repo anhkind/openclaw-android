@@ -2128,6 +2128,10 @@ export OPENCLAW_NO_AUTO_UPDATE=1
 export OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
 
 # The generated helper owns the --lan/--bind handling and prints the LAN URL.
+# Remove an old alias before defining the function: aliases are expanded while
+# this file is parsed, so `start-claw() {` would otherwise become the alias
+# expansion followed by `() {` and fail with a syntax error.
+unalias start-claw 2>/dev/null || true
 start-claw() {
     local helper="$HOME/.openclaw-android/start-openclaw.sh"
     if [ ! -x "$helper" ]; then
