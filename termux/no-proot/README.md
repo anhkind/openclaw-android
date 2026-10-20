@@ -56,7 +56,7 @@ Then run the first-time setup and start the gateway:
 # Configure your model provider and gateway once
 openclaw onboard
 
-# Start the gateway on loopback
+# Start the gateway on loopback (the default)
 start-claw
 
 # In another Termux session, open the terminal UI
@@ -64,6 +64,34 @@ openclaw tui
 ```
 
 The dashboard is available with `openclaw dashboard`.
+
+### Access from another device on your LAN
+
+`start-claw` binds to loopback by default. To reach the gateway from another device on the same network, use LAN mode:
+
+```bash
+start-claw --lan
+```
+
+This binds `0.0.0.0`, prints a warning, and shows the best-effort LAN URL (for example `http://192.168.0.15:18789`). Use `claw-token` to print the token the client needs. Before exposing it, check that authentication is enabled with `openclaw config get gateway.auth.mode` — do not use LAN mode if the result is `none`.
+
+To make the setting permanent, export it before the gateway starts:
+
+```bash
+echo 'export OPENCLAW_GATEWAY_BIND=0.0.0.0' >> ~/.bashrc
+source ~/.bashrc
+start-claw
+```
+
+You can also bind a specific address:
+
+```bash
+start-claw --bind 192.168.0.15
+```
+
+That breaks when the phone's DHCP address changes. An explicit `--bind` wins over `--lan`.
+
+Keep the gateway on loopback unless you need LAN access. When it is exposed, token authentication still applies: do not forward the port to the internet or disable authentication. LAN mode is intended for trusted networks only.
 
 ### Manual configuration
 
@@ -145,7 +173,7 @@ All generated scripts live under `~/.openclaw-android`. OpenClaw's own data and 
 | `~/.openclaw-android/bin/openclaw` | Generated OpenClaw launcher. |
 | `~/.openclaw-android/bin/systemctl` | Termux `systemctl` compatibility stub. It is only on `PATH` for OpenClaw and `start-claw`; it is deliberately not linked into `$PREFIX/bin`. |
 | `~/.openclaw-android/update-claw.sh` | Update helper used by the `update-claw` command. |
-| `~/.openclaw-android/start-openclaw.sh` | Standalone gateway launcher. |
+| `~/.openclaw-android/start-openclaw.sh` | Standalone gateway launcher (`--lan` / `--bind` supported). |
 | `~/.openclaw-android/installer/install.sh` | Saved copy of this installer, used by `update-claw`. |
 | `~/.openclaw-android/install.sh.new` | Temporary download used by the installer self-update. |
 | `$PREFIX/bin/openclaw` | Symlink to the generated launcher. |
@@ -158,7 +186,7 @@ No installer scripts or downloads are stored in `~/.openclaw`; that directory be
 
 | Command | Description |
 | --- | --- |
-| `start-claw` | Start the OpenClaw gateway on loopback. |
+| `start-claw` | Start the OpenClaw gateway on loopback; `--lan` exposes it on the local network. |
 | `openclaw onboard` | First-time setup wizard. |
 | `openclaw config` | Manual configuration menu. |
 | `openclaw tui` | Terminal interface. |

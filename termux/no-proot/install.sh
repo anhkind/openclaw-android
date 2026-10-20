@@ -2122,7 +2122,21 @@ export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
 export OPENCLAW_NO_AUTO_UPDATE=1
 
-alias start-claw='openclaw gateway --bind loopback'
+# Bind address used by start-claw when no --lan/--bind is given. Loopback
+# keeps the gateway on this phone; use `start-claw --lan` (or set
+# OPENCLAW_GATEWAY_BIND=0.0.0.0) to reach it from other devices on the network.
+export OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
+
+# The generated helper owns the --lan/--bind handling and prints the LAN URL.
+start-claw() {
+    local helper="$HOME/.openclaw-android/start-openclaw.sh"
+    if [ ! -x "$helper" ]; then
+        echo "start-claw: $helper is missing; run the installer again." >&2
+        return 127
+    fi
+    "$helper" "$@"
+}
+
 alias update-claw='bash "$HOME/.openclaw-android/update-claw.sh"'
 alias claw-status='openclaw gateway status'
 alias claw-logs='openclaw logs --follow'
@@ -2213,7 +2227,100 @@ export TMPDIR="$PREFIX/tmp"
 export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
 export OPENCLAW_NO_AUTO_UPDATE=1
-exec "$HOME/.openclaw-android/bin/openclaw" gateway --bind loopback "$@"
+
+# Best-effort IPv4 address for the --lan hint. Try the Wi-Fi interface first:
+# Android may route default traffic over cellular even when Wi-Fi is connected.
+_oa_lan_ip() {
+    local ip="" ipcmd="" iface
+    if command -v ip >/dev/null 2>&1; then
+        ipcmd="ip"
+    elif [ -x /system/bin/ip ]; then
+        ipcmd="/system/bin/ip"
+    fi
+    if [ -n "$ipcmd" ]; then
+        for iface in wlan0 eth0; do
+            ip=$("$ipcmd" -4 addr show "$iface" 2>/dev/null \
+                | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)
+            [ -n "$ip" ] && break
+        done
+        [ -n "$ip" ] || ip=$("$ipcmd" route get 1.1.1.1 2>/dev/null \
+            | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -1)
+    fi
+    if [ -z "$ip" ] && command -v getprop >/dev/null 2>&1; then
+        ip=$(getprop dhcp.wlan0.ipaddress 2>/dev/null | tr -d '[:space:]')
+    fi
+    if [ -z "$ip" ] && command -v hostname >/dev/null 2>&1; then
+        ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    fi
+    case "$ip" in
+        ""|0.0.0.0|127.*) ip="" ;;
+    esac
+    if ! [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        ip=""
+    fi
+    printf '%s' "$ip"
+}
+
+BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
+EXPLICIT_BIND=false
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --lan)
+            [ "$EXPLICIT_BIND" = true ] || BIND="0.0.0.0"
+            ;;
+        --bind|--bind=*)
+            EXPLICIT_BIND=true
+            BIND=""
+            ARGS+=("$arg")
+            ;;
+        *)
+            ARGS+=("$arg")
+            ;;
+    esac
+done
+
+# An explicit --bind wins over --lan; read its value for the warning.
+DISPLAY_BIND="$BIND"
+if [ "$EXPLICIT_BIND" = true ]; then
+    for ((i = 0; i < ${#ARGS[@]}; i++)); do
+        case "${ARGS[i]}" in
+            --bind) DISPLAY_BIND="${ARGS[i + 1]:-}" ;;
+            --bind=*) DISPLAY_BIND="${ARGS[i]#--bind=}" ;;
+        esac
+    done
+fi
+
+PORT=18789
+for ((i = 0; i < ${#ARGS[@]}; i++)); do
+    case "${ARGS[i]}" in
+        --port) PORT="${ARGS[i + 1]:-$PORT}" ;;
+        --port=*) PORT="${ARGS[i]#--port=}" ;;
+    esac
+done
+
+case "$DISPLAY_BIND" in
+    ""|loopback|localhost|127.*|::1|"[::1]") ;;
+    *)
+        LAN_IP=$(_oa_lan_ip)
+        echo "WARNING: gateway binding to ${DISPLAY_BIND} - reachable from other devices." >&2
+        if [ "$DISPLAY_BIND" = "0.0.0.0" ]; then
+            echo "         0.0.0.0 listens on every IPv4 interface, not only Wi-Fi." >&2
+        fi
+        echo "         Trusted networks only; keep token auth enabled." >&2
+        if [ -n "$LAN_IP" ]; then
+            echo "         Open http://$LAN_IP:$PORT or ws://$LAN_IP:$PORT" >&2
+        else
+            echo "         Connect to the phone's Wi-Fi IP on port $PORT." >&2
+        fi
+        echo "         Get the token with: claw-token" >&2
+        ;;
+esac
+
+if [ -n "$BIND" ]; then
+    exec "$HOME/.openclaw-android/bin/openclaw" gateway --bind "$BIND" "${ARGS[@]}"
+fi
+exec "$HOME/.openclaw-android/bin/openclaw" gateway "${ARGS[@]}"
 LAUNCHER
     chmod +x "$START_HELPER"
 
@@ -2343,7 +2450,7 @@ show_completion() {
     echo ""
     echo -e "${CYAN}Available Commands:${NC}"
     echo "  openclaw onboard    - First-time setup wizard"
-    echo "  start-claw          - Start gateway on loopback"
+    echo "  start-claw          - Start gateway (--lan for local-network access)"
     echo "  openclaw tui        - Terminal interface"
     echo "  openclaw config     - Manual configuration"
     echo "  openclaw dashboard  - Control UI in browser"
@@ -2357,6 +2464,8 @@ show_completion() {
     echo "  - No Debian, no proot-distro, no 'proot-distro login' step."
     echo "  - Do not run 'openclaw update'; use 'update-claw' so the"
     echo "    Android patches are re-applied after an update."
+    echo "  - To reach the gateway from another device on your LAN, run 'start-claw --lan'"
+    echo "    and use the phone's IP; only do this on a trusted network."
     echo "  - If Android kills background processes (signal 9), disable the"
     echo "    Phantom Process Killer and set Termux battery usage to Unrestricted."
     echo "    See: ${REFERENCE_URL}/blob/main/docs/disable-phantom-process-killer.md"
@@ -2428,6 +2537,7 @@ repair_mode() {
     # launcher/wrapper/alias changes from a newer installer version.
     write_node_wrappers
     configure_bashrc
+    create_helper_scripts
     sync_glibc_resolv
     apply_path_patches
     apply_hardlink_patch

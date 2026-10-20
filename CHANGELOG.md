@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports `--node 24`, `--node 26`, `--openclaw <version>`, `--latest`, `--update`, `--repair`, `--reinstall`, `--yes`, and `--skip-update-check`
   - Generates `update-claw`, `start-claw`, and `systemctl` helpers under `~/.openclaw-android`
   - Keeps installer and runtime files in `~/.openclaw-android`; OpenClaw data remains in `~/.openclaw`
+- 🌐 **Optional LAN binding for the gateway** (`termux/no-proot/install.sh`)
+  - `start-claw --lan` binds `0.0.0.0`, prints a warning, and shows the best-effort phone LAN URL with the correct port
+  - `start-claw` and `start-openclaw.sh` honor `OPENCLAW_GATEWAY_BIND` (default: `loopback`); an explicit `--bind <address>` wins over `--lan`
+  - The default stays loopback, and the gateway token still protects access when it is exposed
 - 🔑 **`claw-token` shell function** (`termux/no-proot/install.sh`)
   - Prints the gateway token from `~/.bashrc`, and configures one with `openclaw doctor --generate-gateway-token` when none exists yet (then tells you to restart the gateway)
   - Explains `password`, `trusted-proxy`, and `none` auth modes instead of pretending a token exists
