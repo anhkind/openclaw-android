@@ -32,6 +32,14 @@ curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/insta
 ```
 **Wait 5-15 minutes** for automated installation to complete.
 
+### No-proot install (Termux-native)
+
+To run OpenClaw directly in Termux without Debian or `proot-distro`, use the installer in [`termux/no-proot`](termux/no-proot/README.md):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh | bash
+```
+
 ---
 ## ⚠️ Important Disclaimer
 
