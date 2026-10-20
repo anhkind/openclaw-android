@@ -2122,12 +2122,12 @@ export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
 export OPENCLAW_NO_AUTO_UPDATE=1
 
-# Bind address used by start-claw when no --lan/--bind is given. Loopback
+# Bind mode used by start-claw when --lan is not given. Loopback
 # keeps the gateway on this phone; use `start-claw --lan` (or set
-# OPENCLAW_GATEWAY_BIND=0.0.0.0) to reach it from other devices on the network.
+# OPENCLAW_GATEWAY_BIND=lan) to reach it from other devices on the network.
 export OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
 
-# The generated helper owns the --lan/--bind handling and prints the LAN URL.
+# The generated helper owns the --lan handling and prints the LAN URL.
 # Remove an old alias before defining the function: aliases are expanded while
 # this file is parsed, so `start-claw() {` would otherwise become the alias
 # expansion followed by `() {` and fail with a syntax error.
@@ -2265,18 +2265,17 @@ _oa_lan_ip() {
     printf '%s' "$ip"
 }
 
+# This launcher supports exactly two modes: loopback (default) and LAN.
 BIND="${OPENCLAW_GATEWAY_BIND:-loopback}"
-EXPLICIT_BIND=false
 ARGS=()
 for arg in "$@"; do
     case "$arg" in
         --lan)
-            [ "$EXPLICIT_BIND" = true ] || BIND="0.0.0.0"
+            BIND="lan"
             ;;
         --bind|--bind=*)
-            EXPLICIT_BIND=true
-            BIND=""
-            ARGS+=("$arg")
+            echo "start-claw: --bind is not supported; use --lan or leave the default loopback." >&2
+            exit 2
             ;;
         *)
             ARGS+=("$arg")
@@ -2284,16 +2283,13 @@ for arg in "$@"; do
     esac
 done
 
-# An explicit --bind wins over --lan; read its value for the warning.
-DISPLAY_BIND="$BIND"
-if [ "$EXPLICIT_BIND" = true ]; then
-    for ((i = 0; i < ${#ARGS[@]}; i++)); do
-        case "${ARGS[i]}" in
-            --bind) DISPLAY_BIND="${ARGS[i + 1]:-}" ;;
-            --bind=*) DISPLAY_BIND="${ARGS[i]#--bind=}" ;;
-        esac
-    done
-fi
+case "$BIND" in
+    loopback|lan) ;;
+    *)
+        echo "start-claw: OPENCLAW_GATEWAY_BIND must be 'loopback' or 'lan'." >&2
+        exit 2
+        ;;
+esac
 
 PORT=18789
 for ((i = 0; i < ${#ARGS[@]}; i++)); do
@@ -2303,28 +2299,20 @@ for ((i = 0; i < ${#ARGS[@]}; i++)); do
     esac
 done
 
-case "$DISPLAY_BIND" in
-    ""|loopback|localhost|127.*|::1|"[::1]") ;;
-    *)
-        LAN_IP=$(_oa_lan_ip)
-        echo "WARNING: gateway binding to ${DISPLAY_BIND} - reachable from other devices." >&2
-        if [ "$DISPLAY_BIND" = "0.0.0.0" ]; then
-            echo "         0.0.0.0 listens on every IPv4 interface, not only Wi-Fi." >&2
-        fi
-        echo "         Trusted networks only; keep token auth enabled." >&2
-        if [ -n "$LAN_IP" ]; then
-            echo "         Open http://$LAN_IP:$PORT or ws://$LAN_IP:$PORT" >&2
-        else
-            echo "         Connect to the phone's Wi-Fi IP on port $PORT." >&2
-        fi
-        echo "         Get the token with: claw-token" >&2
-        ;;
-esac
-
-if [ -n "$BIND" ]; then
-    exec "$HOME/.openclaw-android/bin/openclaw" gateway --bind "$BIND" "${ARGS[@]}"
+if [ "$BIND" = "lan" ]; then
+    LAN_IP=$(_oa_lan_ip)
+    echo "WARNING: gateway is reachable from other devices on the local network." >&2
+    echo "         LAN mode listens on all IPv4 interfaces (0.0.0.0), not only Wi-Fi." >&2
+    echo "         Trusted networks only; keep token auth enabled." >&2
+    if [ -n "$LAN_IP" ]; then
+        echo "         Open http://$LAN_IP:$PORT or ws://$LAN_IP:$PORT" >&2
+    else
+        echo "         Connect to the phone's Wi-Fi IP on port $PORT." >&2
+    fi
+    echo "         Get the token with: claw-token" >&2
 fi
-exec "$HOME/.openclaw-android/bin/openclaw" gateway "${ARGS[@]}"
+
+exec "$HOME/.openclaw-android/bin/openclaw" gateway --bind "$BIND" "${ARGS[@]}"
 LAUNCHER
     chmod +x "$START_HELPER"
 

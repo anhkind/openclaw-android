@@ -551,15 +551,9 @@ If you intentionally expose it on the local network, understand the risk and use
 start-claw --lan
 ```
 
-It binds `0.0.0.0` and prints a warning with the phone's best-effort LAN address. The gateway port is `18789`. Get the token with `claw-token` and connect from the other device to `ws://192.168.0.15:18789`.
+It uses OpenClaw's `lan` bind mode (which listens on `0.0.0.0`) and prints a warning with the phone's best-effort LAN address. The gateway port is `18789`. Get the token with `claw-token` and connect from the other device to `ws://192.168.0.15:18789`.
 
-You can bind the phone's LAN address directly instead:
-
-```bash
-start-claw --bind 192.168.0.15
-```
-
-An explicit `--bind` wins over `--lan`, and `OPENCLAW_GATEWAY_BIND=0.0.0.0` works as an environment default. Make sure both devices are on the same network and that the Wi-Fi access point does not isolate clients. To keep the setting across shells, add `export OPENCLAW_GATEWAY_BIND=0.0.0.0` to `~/.bashrc`.
+`start-claw` supports only loopback (the default) and LAN (`--lan` or `OPENCLAW_GATEWAY_BIND=lan`); `--bind` is not accepted. Make sure both devices are on the same network and that the Wi-Fi access point does not isolate clients. To keep the setting across shells, add `export OPENCLAW_GATEWAY_BIND=lan` to `~/.bashrc`.
 
 Do not expose the gateway to the public internet without authentication and a firewall.
 
