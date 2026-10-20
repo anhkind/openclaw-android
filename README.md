@@ -10,7 +10,7 @@
 
 > **Automated installers for running the OpenClaw AI agent system on Android devices via Termux.**
 
-This repository provides **two independent installation options**. Choose the one that fits how you want to run OpenClaw, then follow its guide for setup, usage, updating, and troubleshooting.
+This repository provides **two independent installation options**. The Termux-native option is recommended for most users. Choose the one that fits how you want to run OpenClaw, then follow its guide for setup, usage, updating, and troubleshooting.
 
 ---
 
@@ -18,24 +18,14 @@ This repository provides **two independent installation options**. Choose the on
 
 | Option | Best for | Runtime |
 | --- | --- | --- |
+| **Without PRoot (Termux-native)** ✅ **Recommended** | Most users. A lighter install with no Debian container or `proot-distro`. | OpenClaw runs directly in Termux using `glibc-runner`, the official Node.js `linux-arm64` build, and embedded Android patches. |
 | **With PRoot (Debian)** | Debian packages, Homebrew, and the most established compatibility path. | Debian via `proot-distro`, Node.js via NVM, and a dedicated non-root `openclaw` user. |
-| **Without PRoot (Termux-native)** | A lighter install with no Debian container or `proot-distro`. | OpenClaw runs directly in Termux using `glibc-runner`, the official Node.js `linux-arm64` build, and embedded Android patches. |
 
 Both installers are separate. They do not share runtime files or migrate an installation from one mode to the other.
 
 ## ⚡ Quick Start
 
-### Option 1: With PRoot (Debian)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh | bash
-```
-
-**Next step:** [Read the full With-PRoot setup guide →](termux/with-proot/README.md)
-
-**Problems?** [With-PRoot troubleshooting →](termux/with-proot/TROUBLESHOOTING.md)
-
-### Option 2: Without PRoot (Termux-native)
+### Option 1: Without PRoot (Termux-native) — Recommended
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh | bash
@@ -45,6 +35,16 @@ curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termu
 
 **Problems?** [No-PRoot troubleshooting →](termux/no-proot/TROUBLESHOOTING.md)
 
+### Option 2: With PRoot (Debian)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh | bash
+```
+
+**Next step:** [Read the full With-PRoot setup guide →](termux/with-proot/README.md)
+
+**Problems?** [With-PRoot troubleshooting →](termux/with-proot/TROUBLESHOOTING.md)
+
 **Wait 5-15 minutes** for the automated installation to complete.
 
 > ⚠️ **Use Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/), not Google Play.** The Play Store build is outdated and not supported.
@@ -53,7 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termu
 
 - **Termux from F-Droid**
 - **64-bit Android device**
-- **Android 7+** for PRoot, **Android 12+** for no-PRoot
+- **Android 12+** for no-PRoot (recommended), **Android 7+** for PRoot
 - **Storage:** 2GB+ for no-PRoot, 4GB+ for PRoot (6GB recommended)
 - **4GB+ RAM** (6GB+ recommended)
 - **Stable internet connection**
@@ -62,17 +62,17 @@ Each installation guide contains the complete requirements, install options, pos
 
 ## 📚 Documentation
 
+- **[No-PRoot setup guide](termux/no-proot/README.md)** — Recommended Termux-native installation
+- **[No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)** — Common Termux-native issues
 - **[With-PRoot setup guide](termux/with-proot/README.md)** — Debian/`proot-distro` installation
 - **[With-PRoot troubleshooting](termux/with-proot/TROUBLESHOOTING.md)** — Common Debian/PRoot issues
-- **[No-PRoot setup guide](termux/no-proot/README.md)** — Termux-native installation
-- **[No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)** — Common Termux-native issues
 - **[QUICKREF.md](QUICKREF.md)** — Quick reference card
 - **[CHANGELOG.md](CHANGELOG.md)** — Version history
 - **[DISCLAIMER.md](DISCLAIMER.md)** — Project scope, attribution, and liability
 
 ## ✨ Features
 
-- **Two installation modes** — Debian/PRoot or lightweight Termux-native
+- **Two installation modes** — Lightweight Termux-native (recommended) or Debian/PRoot
 - **No Android root required** — Both modes run without root access
 - **Android networking fixes** — Compatibility patches for Android/Termux limitations
 - **Update helpers** — Installer update checks and mode-specific update commands
@@ -122,11 +122,11 @@ OpenClaw has its own license; see the official OpenClaw repository for details.
 ### Before asking for help
 
 1. Open the setup guide for your installation mode:
+   - [No-PRoot setup guide](termux/no-proot/README.md) (recommended)
    - [With-PRoot setup guide](termux/with-proot/README.md)
-   - [No-PRoot setup guide](termux/no-proot/README.md)
 2. Check the matching troubleshooting guide:
-   - [With-PRoot troubleshooting](termux/with-proot/TROUBLESHOOTING.md)
    - [No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)
+   - [With-PRoot troubleshooting](termux/with-proot/TROUBLESHOOTING.md)
 3. Include your installation mode, device model, Android version, Termux source, installer command, and relevant error output.
 
 ### Where to ask
@@ -140,8 +140,8 @@ Please do not report OpenClaw framework bugs through the installer project. Open
 
 ## 🔗 Quick Links
 
+- **Without PRoot (recommended):** [Installer](https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh) · [Guide](termux/no-proot/README.md) · [Troubleshooting](termux/no-proot/TROUBLESHOOTING.md)
 - **With PRoot:** [Installer](https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh) · [Guide](termux/with-proot/README.md) · [Troubleshooting](termux/with-proot/TROUBLESHOOTING.md)
-- **Without PRoot:** [Installer](https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/no-proot/install.sh) · [Guide](termux/no-proot/README.md) · [Troubleshooting](termux/no-proot/TROUBLESHOOTING.md)
 - **Changelog:** [Version history](CHANGELOG.md)
 - **Disclaimer:** [Project scope](DISCLAIMER.md)
 
