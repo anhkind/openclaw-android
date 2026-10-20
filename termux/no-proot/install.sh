@@ -82,9 +82,12 @@ ask_yes_no() {
         return 0
     fi
 
-    if [ -r /dev/tty ]; then
+    # -r only says the node is readable; opening it still fails without a
+    # controlling terminal (cron, CI, `bash install.sh </dev/null`), which would
+    # print a redirection error and silently take the default. Probe it first.
+    if [ -r /dev/tty ] && { true < /dev/tty; } 2>/dev/null; then
         echo -e "${YELLOW}${prompt} (y/n)${NC}"
-        read -r response < /dev/tty || response=""
+        read -r response < /dev/tty 2>/dev/null || response=""
     elif [ -t 0 ]; then
         echo -e "${YELLOW}${prompt} (y/n)${NC}"
         read -r response || response=""
@@ -160,14 +163,34 @@ check_for_updates() {
         if ask_yes_no "Would you like to update the installer?" "n"; then
             log_info "Downloading latest installer..."
             mkdir -p "$PROJECT_DIR"
-            if curl -fsSL --max-time 60 "$SCRIPT_URL" -o "$SELF_UPDATE_FILE"; then
-                chmod +x "$SELF_UPDATE_FILE"
-                log_success "Installer updated! Restarting with new version..."
-                exec "$SELF_UPDATE_FILE" "${SCRIPT_ARGS[@]}"
-            else
+            if ! curl -fsSL --max-time 60 "$SCRIPT_URL" -o "$SELF_UPDATE_FILE"; then
                 log_error "Failed to download the latest installer"
                 rm -f "$SELF_UPDATE_FILE"
                 log_info "Continuing with current version..."
+            else
+                # Re-exec only when the downloaded copy really is newer than the
+                # running one. The VERSION file can be ahead of the published
+                # script (one VERSION file serves both installers), and without
+                # this check every run would download and exec the same script
+                # forever - an endless loop when --yes answers the prompt.
+                local downloaded_version
+                downloaded_version=$(sed -n 's/^SCRIPT_VERSION="\([^"]*\)"$/\1/p' \
+                    "$SELF_UPDATE_FILE" 2>/dev/null | head -1)
+
+                if [ "${OPENCLAW_INSTALLER_UPDATED:-0}" = "1" ]; then
+                    log_warn "Already restarted once with a downloaded installer - not restarting again"
+                    rm -f "$SELF_UPDATE_FILE"
+                elif [ -z "$downloaded_version" ] || \
+                        ! version_gt "$downloaded_version" "$SCRIPT_VERSION"; then
+                    log_warn "The published installer reports ${downloaded_version:-no version}, not newer than ${SCRIPT_VERSION}"
+                    log_info "Continuing with the current installer (the repository VERSION file may be ahead of the published script)."
+                    rm -f "$SELF_UPDATE_FILE"
+                else
+                    chmod +x "$SELF_UPDATE_FILE"
+                    log_success "Installer updated to ${downloaded_version}! Restarting..."
+                    export OPENCLAW_INSTALLER_UPDATED=1
+                    exec "$SELF_UPDATE_FILE" "${SCRIPT_ARGS[@]}"
+                fi
             fi
         else
             log_info "Continuing with current version..."
@@ -280,6 +303,34 @@ check_storage() {
     log_success "Storage check passed"
 }
 
+check_existing_install() {
+    log_step "Checking for an existing installation..."
+
+    local proot_rootfs="$PREFIX/var/lib/proot-distro/installed-rootfs"
+
+    # A no-PRoot install is updated in place, so it never prompts.
+    if [ -d "$PROJECT_DIR/node" ]; then
+        log_info "Existing no-PRoot installation found - it will be updated in place"
+        return 0
+    fi
+
+    # The two modes are independent (no migration is provided). A Debian/PRoot
+    # install would stay untouched but share OpenClaw's own ~/.openclaw state, so
+    # ask before mixing the two.
+    if [ -d "$proot_rootfs/debian" ]; then
+        log_warn "A PRoot/Debian OpenClaw installation was found:"
+        log_warn "  $proot_rootfs/debian"
+        log_warn "This installer does not migrate or remove it. The Debian installation"
+        log_warn "stays as it is, and both would share the ~/.openclaw configuration."
+        if ! ask_yes_no "Continue with the no-PRoot installation?" "y"; then
+            log_info "Installation cancelled - nothing was changed."
+            exit 0
+        fi
+    else
+        log_success "No existing installation found"
+    fi
+}
+
 # ------------------------------------------------------------------------------
 # Termux packages and glibc runtime
 # ------------------------------------------------------------------------------
@@ -299,28 +350,28 @@ install_termux_packages() {
     apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
         || log_warn "apt-get upgrade reported errors, continuing..."
 
-    log_info "Installing curl, pacman, git and build tools..."
+    # Nothing is compiled here: npm runs with --ignore-scripts and native builds
+    # do not work on Android in this layout. So no git/python/make/cmake/clang
+    # toolchain - it is several hundred MB that the install never uses. Install
+    # it yourself if you know you need it.
+    log_info "Installing required Termux packages..."
     pkg install -y \
         curl \
         tar \
         xz-utils \
         coreutils \
         pacman \
-        git \
-        python \
-        make \
-        cmake \
-        clang \
-        binutils \
         || {
             log_error "Failed to install required Termux packages"
             exit 1
         }
 
-    # resolv-conf is optional: glibc-compat.js falls back to public DNS servers.
-    pkg install -y resolv-conf || log_warn "resolv-conf not installed (using DNS fallback)"
+    # Optional: provides $PREFIX/etc/resolv.conf. Without it, sync_glibc_resolv
+    # falls back to the phone's own DNS servers.
+    pkg install -y resolv-conf || log_warn "resolv-conf not installed (using the device DNS servers)"
 
-    # Termux ships llvm-ar but some node-gyp builds still look for plain ar.
+    # Best effort for users who installed a C toolchain themselves: node-gyp
+    # looks for a plain `ar`, while Termux ships llvm-ar.
     if [ ! -e "$PREFIX/bin/ar" ] && [ -x "$PREFIX/bin/llvm-ar" ]; then
         ln -s "$PREFIX/bin/llvm-ar" "$PREFIX/bin/ar" 2>/dev/null || true
     fi
@@ -373,17 +424,34 @@ install_glibc() {
             exit 1
         fi
 
-        # Verify signatures even if the user's pacman.conf relaxed them.
+        # Termux ships "SigLevel = DatabaseRequired PackageOptional", i.e. the
+        # database must be signed but packages may be unsigned. Require package
+        # signatures too (the keyring above is populated for exactly that), even
+        # when the user's pacman.conf relaxed them.
         mkdir -p "$PREFIX/tmp"
-        if ! sed -E 's/^[[:space:]]*SigLevel[[:space:]]*=.*/SigLevel = DatabaseRequired PackageOptional/' \
+        local sig_level_re='^[[:space:]]*#?[[:space:]]*SigLevel[[:space:]]*='
+        if ! grep -qE "$sig_level_re" "$pacman_conf"; then
+            log_warn "No SigLevel line in $pacman_conf - packages may be installed unsigned"
+        fi
+        if ! sed -E "s|$sig_level_re.*|SigLevel = PackageRequired DatabaseRequired|" \
                 "$pacman_conf" > "$verify_conf"; then
             log_error "Could not prepare the pacman configuration ($pacman_conf)"
             log_info "Run 'pkg reinstall pacman' and try again."
             exit 1
         fi
+        if ! grep -q '^SigLevel = PackageRequired DatabaseRequired$' "$verify_conf"; then
+            log_warn "Could not raise SigLevel in the pacman configuration - package signatures stay optional"
+        fi
 
+        # -Syu, not -Sy: glibc-runner and its glibc dependency live in a separate
+        # prefix ($PREFIX/glibc), but installing the newest package from a freshly
+        # synced database without upgrading the rest is the classic partial
+        # upgrade that pacman is known to break on.
+        # bash and resolv-conf are Termux (apt) packages; patchelf is only used by
+        # `grun --setup`, which this installer does not use - it calls the loader
+        # directly - so all three are assumed installed instead of pulled in.
         log_info "Installing glibc-runner..."
-        if ! pacman --config "$verify_conf" -Sy glibc-runner --noconfirm \
+        if ! pacman --config "$verify_conf" -Syu --needed glibc-runner --noconfirm \
                 --assume-installed bash,patchelf,resolv-conf; then
             rm -f "$verify_conf"
             log_error "Failed to install glibc-runner"
@@ -411,9 +479,57 @@ HOSTS
         log_success "Created glibc /etc/hosts"
     fi
 
+    sync_glibc_resolv
+
     mkdir -p "$PROJECT_DIR"
     touch "$PROJECT_DIR/.glibc-arch"
     log_success "glibc runtime ready ($GLIBC_LDSO)"
+}
+
+sync_glibc_resolv() {
+    # glibc resolves through $PREFIX/glibc/etc/resolv.conf (its compiled
+    # sysconfdir). Android/Termux keep the (bionic) file at
+    # $PREFIX/etc/resolv.conf, so without this copy glibc's getaddrinfo() has no
+    # name servers at all and every resolver path outside the Node shim fails.
+    local glibc_resolv="$PREFIX/glibc/etc/resolv.conf"
+    local termux_resolv="$PREFIX/etc/resolv.conf"
+    local tmp="$PREFIX/glibc/etc/.resolv.conf.new"
+
+    mkdir -p "$PREFIX/glibc/etc"
+
+    if [ -s "$termux_resolv" ]; then
+        # Re-copy when the source is newer (a network change can rewrite it).
+        if [ ! -s "$glibc_resolv" ] || [ "$termux_resolv" -nt "$glibc_resolv" ]; then
+            if cp -f "$termux_resolv" "$tmp" 2>/dev/null && mv -f "$tmp" "$glibc_resolv"; then
+                log_success "glibc resolver configuration updated"
+            else
+                rm -f "$tmp" 2>/dev/null || true
+                log_warn "Could not write $glibc_resolv"
+            fi
+        fi
+        return 0
+    fi
+
+    [ -s "$glibc_resolv" ] && return 0
+
+    # The resolv-conf package is optional: fall back to the phone's own DNS
+    # servers (Android properties), then to public resolvers.
+    local servers=""
+    if command -v getprop &>/dev/null; then
+        servers=$(getprop 2>/dev/null \
+            | sed -n 's/^\[net\.dns[1-4]\]: \[\(.*\)\]$/\1/p' \
+            | grep -E '^[0-9A-Fa-f:.]+$' \
+            | head -4 || true)
+    fi
+    [ -n "$servers" ] || servers=$(printf '8.8.8.8\n8.8.4.4')
+
+    if printf '%s\n' "$servers" | sed 's/^/nameserver /' > "$tmp" 2>/dev/null && \
+            mv -f "$tmp" "$glibc_resolv"; then
+        log_success "Created glibc resolv.conf ($(printf '%s' "$servers" | tr '\n' ' '))"
+    else
+        rm -f "$tmp" 2>/dev/null || true
+        log_warn "Could not create $glibc_resolv"
+    fi
 }
 
 setup_environment() {
@@ -421,11 +537,8 @@ setup_environment() {
     export TMPDIR="$PREFIX/tmp"
     export TMP="$TMPDIR"
     export TEMP="$TMPDIR"
-    export OA_GLIBC=1
-    export CONTAINER=1
+    # Only what OpenClaw actually reads (process.env.OPENCLAW_NO_AUTO_UPDATE).
     export OPENCLAW_NO_AUTO_UPDATE=1
-    export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
-    export CPATH="$PREFIX/include/glib-2.0:$PREFIX/lib/glib-2.0/include"
 
     mkdir -p "$PREFIX/tmp" "$PROJECT_DIR" "$BIN_DIR" "$COMPAT_DIR" "$PATCH_DIR"
     mkdir -p "$PROJECT_DIR/installer"
@@ -579,6 +692,12 @@ os.networkInterfaces = function networkInterfaces() {
 //   - Android 9+: /bin/sh exists (/system/bin/sh) but is minimal (toybox/mksh)
 //     and lacks Termux PATH, environment, and proper command support
 // Always use Termux's shell for exec/execSync to ensure consistent behavior.
+//
+// Note: exec/execSync build their shell command inside Node's internal spawn,
+// which cannot be intercepted by patching child_process.spawn. A simple command
+// (no pipes, redirects, ...) that needs the glibc loader or a shebang fix is
+// therefore re-routed to the file-based APIs, so the spawn/execFile wrapping
+// below applies to it too.
 
 {
   const child_process = require('child_process');
@@ -594,7 +713,15 @@ os.networkInterfaces = function networkInterfaces() {
         options = {};
       }
       options = options || {};
-      if (!options.shell) {
+      // An explicitly requested shell is the caller's decision: leave it alone.
+      const userShell = options.shell;
+      const fixed = userShell ? null : _oaShellCommandFix(command, options.env);
+      if (fixed) {
+        const fileOptions = Object.assign({}, options, { shell: false });
+        if (fixed.env) fileOptions.env = fixed.env;
+        return child_process.execFile(fixed.file, fixed.args, fileOptions, callback);
+      }
+      if (!userShell) {
         options.shell = termuxSh;
       }
       return _originalExec.call(child_process, command, options, callback);
@@ -602,7 +729,14 @@ os.networkInterfaces = function networkInterfaces() {
 
     child_process.execSync = function execSync(command, options) {
       options = options || {};
-      if (!options.shell) {
+      const userShell = options.shell;
+      const fixed = userShell ? null : _oaShellCommandFix(command, options.env);
+      if (fixed) {
+        const fileOptions = Object.assign({}, options, { shell: false });
+        if (fixed.env) fileOptions.env = fixed.env;
+        return child_process.execFileSync(fixed.file, fixed.args, fileOptions);
+      }
+      if (!userShell) {
         options.shell = termuxSh;
       }
       return _originalExecSync.call(child_process, command, options);
@@ -624,18 +758,39 @@ os.networkInterfaces = function networkInterfaces() {
 try {
   const dns = require('dns');
 
-  // Read DNS servers from our resolv.conf or use Google DNS as fallback
-  let dnsServers = ['8.8.8.8', '8.8.4.4'];
-  try {
-    const resolvConf = fs.readFileSync(
-      (process.env.PREFIX || '/data/data/com.termux/files/usr') + '/etc/resolv.conf',
-      'utf8'
-    );
-    const parsed = resolvConf.match(/^nameserver\s+(.+)$/gm);
-    if (parsed && parsed.length > 0) {
-      dnsServers = parsed.map(l => l.replace(/^nameserver\s+/, '').trim());
-    }
-  } catch {}
+  // Read DNS servers from our resolv.conf or use Google DNS as fallback.
+  // glibc's own reader uses $PREFIX/glibc/etc/resolv.conf; the Termux (bionic)
+  // copy lives at $PREFIX/etc/resolv.conf. The installer keeps the glibc copy in
+  // sync, so prefer it and fall back to the bionic file.
+  const _oaPrefix = process.env.PREFIX || '/data/data/com.termux/files/usr';
+  const _resolvCandidates = [
+    _oaPrefix + '/glibc/etc/resolv.conf',
+    _oaPrefix + '/etc/resolv.conf',
+  ];
+  // c-ares rejects zone-scoped addresses (fe80::1%wlan0) and other junk.
+  const _usableNameServer = (server) => {
+    const bare = String(server || '').replace(/^\[|\]$/g, '');
+    return bare.length > 0 && !bare.includes('%') && /^[0-9A-Fa-f:.]+$/.test(bare);
+  };
+
+  let dnsServers = [];
+  for (const candidate of _resolvCandidates) {
+    try {
+      const parsed = fs.readFileSync(candidate, 'utf8').match(/^nameserver\s+(\S+)/gm);
+      if (parsed) {
+        const servers = parsed
+          .map(line => line.replace(/^nameserver\s+/, '').trim())
+          .filter(_usableNameServer);
+        if (servers.length > 0) {
+          dnsServers = servers;
+          break;
+        }
+      }
+    } catch {}
+  }
+  if (dnsServers.length === 0) {
+    dnsServers = ['8.8.8.8', '8.8.4.4'];
+  }
 
   // Set DNS servers for c-ares resolver
   try { dns.setServers(dnsServers); } catch {}
@@ -971,6 +1126,20 @@ function _tryWrapSpawn(file, args, options) {
     args: shebang.interpArgs.concat([resolved]).concat(args || []),
     options: options,
   };
+}
+
+// Used by the exec/execSync overrides above: resolve a simple shell command the
+// same way spawn does, so native glibc binaries and broken shebangs work there
+// too. Returns null when the command is not a simple one (the shell handles it),
+// when the caller chose its own shell, or when there is no glibc loader.
+function _oaShellCommandFix(command, env) {
+  if (typeof command !== 'string') return null;
+  if (!fs.existsSync(_glibcLdso)) return null;
+  try {
+    return _tryFixShellCommand(command, env || process.env);
+  } catch {
+    return null;
+  }
 }
 
 if (fs.existsSync(_glibcLdso)) {
@@ -1642,41 +1811,44 @@ apply_path_patches() {
 
     local patched=0 f files
 
+    # Paths are read line by line (`while ... read`), so a file name containing a
+    # space cannot be split into two bogus paths the way `for f in $files` would.
+    #
     # /tmp -> $PREFIX/tmp. Only files that still contain the original strings are
     # touched, so repeated runs are cheap and idempotent.
     files=$(grep -rlF -e '"/tmp/' -e "'/tmp/" -e '`/tmp/' -e '"/tmp"' -e "'/tmp'" \
         "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true)
-    for f in $files; do
-        [ -f "$f" ] || continue
+    while IFS= read -r f; do
+        [ -n "$f" ] && [ -f "$f" ] || continue
         sed -i "s|\"\/tmp/|\"$PREFIX/tmp/|g" "$f"
         sed -i "s|'\/tmp/|'$PREFIX/tmp/|g" "$f"
         sed -i "s|\`\/tmp/|\`$PREFIX/tmp/|g" "$f"
         sed -i "s|\"\/tmp\"|\"$PREFIX/tmp\"|g" "$f"
         sed -i "s|'\/tmp'|'$PREFIX/tmp'|g" "$f"
         patched=$((patched + 1))
-    done
+    done <<< "$files"
 
     # /bin/sh and /bin/bash do not exist (or are the wrong shell) in Termux;
     # /usr/bin/env does not exist either. Point them at the Termux binaries.
     for pattern in '/bin/sh' '/bin/bash'; do
-        files=$(grep -rl "\"$pattern\"" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true)
-        files="$files $(grep -rl "'$pattern'" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true)"
-        for f in $files; do
-            [ -f "$f" ] || continue
+        files=$( { grep -rl "\"$pattern\"" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true
+                   grep -rl "'$pattern'" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true; } | sort -u)
+        while IFS= read -r f; do
+            [ -n "$f" ] && [ -f "$f" ] || continue
             sed -i "s|\"$pattern\"|\"$PREFIX$pattern\"|g" "$f" 2>/dev/null || true
             sed -i "s|'$pattern'|'$PREFIX$pattern'|g" "$f" 2>/dev/null || true
             patched=$((patched + 1))
-        done
+        done <<< "$files"
     done
 
-    files=$(grep -rl '"/usr/bin/env"' "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true)
-    files="$files $(grep -rl "'/usr/bin/env'" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true)"
-    for f in $files; do
-        [ -f "$f" ] || continue
+    files=$( { grep -rl '"/usr/bin/env"' "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true
+               grep -rl "'/usr/bin/env'" "$OPENCLAW_DIR" --include='*.js' --include='*.mjs' --include='*.cjs' 2>/dev/null || true; } | sort -u)
+    while IFS= read -r f; do
+        [ -n "$f" ] && [ -f "$f" ] || continue
         sed -i "s|\"/usr/bin/env\"|\"$PREFIX/bin/env\"|g" "$f" 2>/dev/null || true
         sed -i "s|'/usr/bin/env'|'$PREFIX/bin/env'|g" "$f" 2>/dev/null || true
         patched=$((patched + 1))
-    done
+    done <<< "$files"
 
     if [ "$patched" -eq 0 ]; then
         log_info "No hardcoded paths needed patching"
@@ -1762,8 +1934,6 @@ export TMPDIR="$PREFIX/tmp"
 export TMP="$PREFIX/tmp"
 export TEMP="$PREFIX/tmp"
 export OPENCLAW_NO_AUTO_UPDATE="\${OPENCLAW_NO_AUTO_UPDATE:-1}"
-export CONTAINER=1
-export CLAWDHUB_WORKDIR="\$HOME/.openclaw/workspace"
 _oa_block=false
 for _oa_arg in "\$@"; do
     [ "\$_oa_arg" = "--update" ] && _oa_block=true && break
@@ -1814,6 +1984,16 @@ write_systemctl_stub() {
     cat > "$stub" << 'SYSTEMCTL'
 #!/usr/bin/env bash
 # systemctl stub for Termux/Android (systemd is unavailable).
+#
+# Scope: this file lives in ~/.openclaw-android/bin, which is on PATH for
+# OpenClaw and start-claw only. It is deliberately NOT linked into
+# $PREFIX/bin: a fake systemctl there would shadow the real command for every
+# other program in Termux.
+#
+# Only "restart" is emulated (OpenClaw asks systemctl to restart the gateway).
+# Every other invocation answers like systemd does outside systemd - non-zero
+# with its message - so OpenClaw takes its normal "no systemd" path instead of
+# believing a service manager is present.
 for arg in "$@"; do
     if [ "$arg" = "restart" ]; then
         if ! openclaw gateway config.patch \
@@ -1823,15 +2003,18 @@ for arg in "$@"; do
         exit 0
     fi
 done
-exit 0
+echo "System has not been booted with systemd as init system (PID 1). Can't operate." >&2
+echo "Failed to connect to bus: Host is down" >&2
+exit 1
 SYSTEMCTL
     # /usr/bin/env does not exist in Termux and glibc child processes do not get
     # termux-exec's path translation, so use the absolute Termux shell.
     sed -i "1s|^#!/usr/bin/env bash$|#!$PREFIX/bin/bash|" "$stub"
     chmod +x "$stub"
 
+    # Remove the symlink older versions of this installer created: the stub must
+    # not shadow systemctl globally.
     rm -f "$PREFIX/bin/systemctl" 2>/dev/null || true
-    ln -s "$stub" "$PREFIX/bin/systemctl"
 }
 
 openclaw_run() {
@@ -1887,8 +2070,11 @@ configure_bashrc() {
     touch "$BASHRC"
 
     # Replace the previous no-proot block so re-running the installer does not
-    # duplicate it.
-    sed -i "/$BASHRC_START/,/$BASHRC_END/d" "$BASHRC" 2>/dev/null || true
+    # duplicate it. Only when both markers are present: deleting from a start
+    # marker without an end marker would truncate the rest of the file.
+    if grep -qF "$BASHRC_START" "$BASHRC" && grep -qF "$BASHRC_END" "$BASHRC"; then
+        sed -i "/$BASHRC_START/,/$BASHRC_END/d" "$BASHRC"
+    fi
 
     cat >> "$BASHRC" << 'BASHRC_BLOCK'
 
@@ -1898,11 +2084,7 @@ export PATH="$HOME/.openclaw-android/bin:$HOME/.openclaw-android/node/bin:$HOME/
 export TMPDIR="$PREFIX/tmp"
 export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
-export OA_GLIBC=1
-export CONTAINER=1
 export OPENCLAW_NO_AUTO_UPDATE=1
-export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
-export CPATH="$PREFIX/include/glib-2.0:$PREFIX/lib/glib-2.0/include"
 
 alias start-claw='openclaw gateway --bind loopback'
 alias update-claw='bash "$HOME/.openclaw-android/update-claw.sh"'
@@ -1936,11 +2118,7 @@ export PATH="$HOME/.openclaw-android/bin:$HOME/.openclaw-android/node/bin:$PREFI
 export TMPDIR="$PREFIX/tmp"
 export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
-export OA_GLIBC=1
-export CONTAINER=1
 export OPENCLAW_NO_AUTO_UPDATE=1
-export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
-export CPATH="$PREFIX/include/glib-2.0:$PREFIX/lib/glib-2.0/include"
 exec "$HOME/.openclaw-android/bin/openclaw" gateway --bind loopback "$@"
 LAUNCHER
     chmod +x "$START_HELPER"
@@ -2020,6 +2198,7 @@ verify_install() {
         log_info "Try: openclaw doctor --fix"
     fi
 
+    VERIFY_OK="$ok"
     [ "$ok" -eq 1 ]
 }
 
@@ -2032,10 +2211,19 @@ show_completion() {
 
     echo -e "${GREEN}╔═══════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                                                   ║${NC}"
-    echo -e "${GREEN}║      OpenClaw Installation Complete!              ║${NC}"
+    if [ "${VERIFY_OK:-0}" -eq 1 ]; then
+        echo -e "${GREEN}║      OpenClaw Installation Complete!              ║${NC}"
+    else
+        echo -e "${RED}║      Installation finished WITH ERRORS            ║${NC}"
+    fi
     echo -e "${GREEN}║              No PRoot / No Debian                 ║${NC}"
     echo -e "${GREEN}╚═══════════════════════════════════════════════════╝${NC}"
     echo ""
+    if [ "${VERIFY_OK:-0}" -ne 1 ]; then
+        echo -e "${YELLOW}Some verification checks failed - read the [ERROR] lines above${NC}"
+        echo -e "${YELLOW}before using this installation.${NC}"
+        echo ""
+    fi
     echo -e "${CYAN}Installed Components:${NC}"
     echo "  - glibc runtime (Termux glibc-runner, no Linux distro)"
     echo "  - Node.js $node_ver (official linux-arm64 via ld.so)"
@@ -2141,6 +2329,10 @@ repair_mode() {
         exit 1
     fi
 
+    # Refresh everything generated by this installer, so --repair also applies
+    # launcher/wrapper changes from a newer installer version.
+    write_node_wrappers
+    sync_glibc_resolv
     apply_path_patches
     apply_hardlink_patch
     write_openclaw_shim
@@ -2248,6 +2440,7 @@ main() {
     check_architecture
     check_android_version
     check_storage
+    check_existing_install
 
     setup_environment
     install_self_copy
@@ -2276,8 +2469,12 @@ main() {
     configure_bashrc
     create_helper_scripts
 
-    verify_install
+    # A failed verification must not hide the summary: report the failure and
+    # still print what was installed, then exit non-zero.
+    local verify_rc=0
+    verify_install || verify_rc=1
     show_completion
+    return "$verify_rc"
 }
 
 main "$@"

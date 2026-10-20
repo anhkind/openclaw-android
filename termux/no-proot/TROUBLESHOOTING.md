@@ -196,11 +196,10 @@ If that does not work, call the launcher directly:
 "$PREFIX/bin/openclaw" --version
 ```
 
-Check the symlinks:
+Check the launcher link:
 
 ```bash
 ls -la "$PREFIX/bin/openclaw"
-ls -la "$PREFIX/bin/systemctl"
 ```
 
 The launcher is generated at `~/.openclaw-android/bin/openclaw`. If the symlink is missing, run repair mode:
@@ -266,7 +265,7 @@ If the command fails, the compatibility module or Node wrapper is missing. Rerun
 
 ### `systemctl` does not behave like systemd
 
-The installer creates a `systemctl` compatibility stub at `$PREFIX/bin/systemctl` because some OpenClaw flows expect a `systemctl` command. It is not a real service manager.
+The installer creates a `systemctl` compatibility stub at `~/.openclaw-android/bin/systemctl` because some OpenClaw flows expect a `systemctl` command. It only emulates `restart`; every other call answers like systemd does on a machine without systemd, so OpenClaw takes its normal non-systemd path. It is not a real service manager, and it is not installed into `$PREFIX/bin` (a stub there would shadow `systemctl` for every other program in Termux).
 
 Use the OpenClaw commands instead:
 
@@ -478,6 +477,13 @@ curl -I https://api.openai.com
 ```
 
 Try switching between Wi-Fi and mobile data. If DNS works in other Android apps but not Termux, check Termux's network permissions and restart Termux.
+
+glibc reads name servers from `$PREFIX/glibc/etc/resolv.conf`, while Termux's own resolver configuration is `$PREFIX/etc/resolv.conf`. The installer keeps the glibc copy in sync; after changing networks, rerun repair to refresh it:
+
+```bash
+bash ~/.openclaw-android/installer/install.sh --repair --yes
+cat "$PREFIX/glibc/etc/resolv.conf"
+```
 
 ### API requests time out
 

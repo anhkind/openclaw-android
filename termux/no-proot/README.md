@@ -9,6 +9,8 @@ The installer uses:
 - The Android compatibility patches from [AidanPark/openclaw-android](https://github.com/AidanPark/openclaw-android)
 - OpenClaw pinned to `2026.10.2` by default, because that is the version the embedded patches were verified against
 
+It only installs `curl`, `tar`, `xz-utils`, `coreutils`, `pacman`, and (optionally) `resolv-conf`. No C/C++ toolchain: nothing is compiled, so `git`, `python`, `make`, `cmake`, `clang`, and `binutils` are not needed. Install them yourself if you need them for something else.
+
 ## Requirements
 
 - **Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/)**. Do not use the Google Play version.
@@ -19,6 +21,8 @@ The installer uses:
 - Android battery optimization disabled for Termux, and the Phantom Process Killer disabled if Android kills the gateway.
 
 > OpenClaw and Node.js both run as your normal Termux user. No root access is required.
+
+> This installer does not migrate a Debian/PRoot installation. If one is found, it warns and leaves it untouched; both modes would share the `~/.openclaw` configuration.
 
 ## Install
 
@@ -139,13 +143,13 @@ All generated scripts live under `~/.openclaw-android`. OpenClaw's own data and 
 | --- | --- |
 | `~/.openclaw-android/` | Node.js runtime, npm globals, glibc compatibility shim, and patches. |
 | `~/.openclaw-android/bin/openclaw` | Generated OpenClaw launcher. |
-| `~/.openclaw-android/bin/systemctl` | Termux `systemctl` compatibility stub. |
+| `~/.openclaw-android/bin/systemctl` | Termux `systemctl` compatibility stub. It is only on `PATH` for OpenClaw and `start-claw`; it is deliberately not linked into `$PREFIX/bin`. |
 | `~/.openclaw-android/update-claw.sh` | Update helper used by the `update-claw` command. |
 | `~/.openclaw-android/start-openclaw.sh` | Standalone gateway launcher. |
 | `~/.openclaw-android/installer/install.sh` | Saved copy of this installer, used by `update-claw`. |
 | `~/.openclaw-android/install.sh.new` | Temporary download used by the installer self-update. |
 | `$PREFIX/bin/openclaw` | Symlink to the generated launcher. |
-| `$PREFIX/bin/systemctl` | Symlink to the generated compatibility stub. |
+| `$PREFIX/glibc/etc/resolv.conf` | Name servers for glibc, kept in sync from `$PREFIX/etc/resolv.conf`. |
 | `~/.bashrc` | PATH, environment variables, and aliases. |
 
 No installer scripts or downloads are stored in `~/.openclaw`; that directory belongs to OpenClaw and is left for OpenClaw to create and manage.

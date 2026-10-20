@@ -25,9 +25,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚠️ Updated `DISCLAIMER.md` to cover both independent installers
 - 🔗 Updated contribution and bug-report documentation for the two installation paths
 - ℹ️ The PRoot and no-PRoot modes are independent; no automatic migration is provided
+- 🔢 Installer versions synchronized at `2026.10.20` across `VERSION`, `termux/no-proot/install.sh`, and `termux/with-proot/install.sh`
+  - One `VERSION` file drives the self-update prompt of both installers, so the three values have to move together
+- 🪶 **No Termux toolchain by default** (`termux/no-proot/install.sh`)
+  - Installs only `curl`, `tar`, `xz-utils`, `coreutils`, `pacman` (+ optional `resolv-conf`); `git`, `python`, `make`, `cmake`, `clang`, and `binutils` are gone
+  - Nothing is compiled (npm runs with `--ignore-scripts`), so that toolchain was several hundred MB of unused packages
+- 🧾 **pacman install upgraded from `-Sy` to `-Syu --needed`** (`termux/no-proot/install.sh`) to avoid the classic partial-upgrade breakage
+- 🔗 `termux/with-proot/install.sh` repository links now point at `anhkind/openclaw-android` (the repo that hosts the scripts); the previous upstream stays listed as a reference in the banner
+- 🧹 Dropped environment variables OpenClaw does not read (`OA_GLIBC`, `CONTAINER`, `CLAWDHUB_WORKDIR`, `CPATH`) from the installer, `.bashrc` block, launcher, and gateway helper
 
 ### Removed
 - 🗑️ Removed the root `install.sh`, `GUIDE.md`, and `TROUBLESHOOTING.md` after moving their content under `termux/with-proot/`
+
+### Fixed
+- 🔁 **Installer self-update can no longer loop** (`termux/no-proot/install.sh`, `termux/with-proot/install.sh`)
+  - A downloaded installer is re-executed only when its `SCRIPT_VERSION` is actually newer, and at most once per run
+  - Previously, a `VERSION` file ahead of the published script re-downloaded and re-executed forever, a loop `update-claw` (`--yes`) could not interrupt
+- 🌐 **glibc now has a resolver configuration** (`termux/no-proot/install.sh`)
+  - `$PREFIX/glibc/etc/resolv.conf` is created from `$PREFIX/etc/resolv.conf`, falls back to Android's `net.dns*` properties and then public resolvers, and is refreshed by `--repair`
+  - The compatibility shim reads the glibc copy first and ignores unusable entries such as zone-scoped IPv6 addresses
+- 🧰 **The `systemctl` stub no longer shadows the global command** (`termux/no-proot/install.sh`)
+  - Kept in `~/.openclaw-android/bin` only; the `$PREFIX/bin/systemctl` symlink older versions created is removed on install and repair
+  - Only `restart` is emulated; other invocations answer like systemd does without systemd, so OpenClaw takes its normal non-systemd path instead of believing a service manager exists
+- 🏠 `--repair` now also regenerates the Node.js wrappers (`termux/no-proot/install.sh`), so wrapper changes from a newer installer apply
+- 📝 A damaged `~/.bashrc` block no longer truncates the file (`termux/no-proot/install.sh`): the old block is removed only when both markers are present
+- ✅ Failed verification no longer hides the completion summary (`termux/no-proot/install.sh`): the banner reports the failure and the script still exits non-zero
+- 🧬 **`exec()`/`execSync()` now get the same Android wrapping as `spawn`** (`termux/no-proot/install.sh`)
+  - Node builds the shell command for `exec`/`execSync` in an internal spawn that cannot be intercepted, so a native glibc binary run through a shell command string previously failed with `ENOENT`
+  - Simple commands are now resolved and re-routed through the file-based APIs, so the glibc-loader and shebang fixes apply; pipelines and redirects still use the shell, and an explicitly requested shell is left alone
+- 📛 Path patching survives awkward file names (`termux/no-proot/install.sh`): the `for f in $files` word-splitting loops are now line-by-line reads
+- 🛡️ An existing Debian/PRoot installation is detected and called out (`termux/no-proot/install.sh`) instead of being silently left to share `~/.openclaw`
+- ⌨️ Prompts no longer print a `/dev/tty` redirection error when there is no controlling terminal (both installers); the documented default is used instead
+
+### Security
+- 🔐 **pacman package signatures are now actually verified** (`termux/no-proot/install.sh`)
+  - Termux ships `SigLevel = DatabaseRequired PackageOptional`, so the previous rewrite reproduced the default and left packages unverified
+  - The glibc-runner install now runs with `SigLevel = PackageRequired DatabaseRequired` and warns when the configuration has no `SigLevel` line at all
 
 ## [2026.10.19] - 2026-10-19
 

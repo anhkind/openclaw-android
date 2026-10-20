@@ -156,6 +156,7 @@ git checkout -b feature/my-feature
    - Modify VERSION file
    - Test if update detection works
    - Verify script updates correctly
+   - Keep `VERSION`, `SCRIPT_VERSION` in `termux/no-proot/install.sh`, and `SCRIPT_VERSION` in `termux/with-proot/install.sh` in step: one `VERSION` file drives the self-update prompt of both installers
 
 ### Areas for Contribution
 

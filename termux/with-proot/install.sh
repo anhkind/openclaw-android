@@ -1,18 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/bash
 ################################################################################
 # OpenClaw Android Installer
-# Version: 2026.10.19
+# Version: 2026.10.20
 # Description: Automated installer for OpenClaw on Android via Termux
-# Repository: https://github.com/iyeoh88-svg/openclaw-android
+# Repository: https://github.com/anhkind/openclaw-android
+# Upstream reference: https://github.com/iyeoh88-svg/openclaw-android
 ################################################################################
 
 set -e  # Exit on error
 
 # Script Configuration
-SCRIPT_VERSION="2026.10.19"
+SCRIPT_VERSION="2026.10.20"
 SCRIPT_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/termux/with-proot/install.sh"
 VERSION_URL="https://raw.githubusercontent.com/anhkind/openclaw-android/main/VERSION"
-REPO_URL="https://github.com/iyeoh88-svg/openclaw-android"
+REPO_URL="https://github.com/anhkind/openclaw-android"
+REFERENCE_URL="https://github.com/iyeoh88-svg/openclaw-android"
 
 # Package versions / compatibility floors
 # OpenClaw 2026.10.x requires: node >=24.16.0 <25 || >=26.1.0
@@ -67,9 +69,12 @@ ask_yes_no() {
         return 0
     fi
 
-    if [ -r /dev/tty ]; then
+    # -r only says the node is readable; opening it still fails without a
+    # controlling terminal (cron, CI, `bash install.sh </dev/null`), which would
+    # print a redirection error and silently take the default. Probe it first.
+    if [ -r /dev/tty ] && { true < /dev/tty; } 2>/dev/null; then
         echo -e "${YELLOW}${prompt} (y/n)${NC}"
-        read -r response < /dev/tty || response=""
+        read -r response < /dev/tty 2>/dev/null || response=""
     elif [ -t 0 ]; then
         echo -e "${YELLOW}${prompt} (y/n)${NC}"
         read -r response || response=""
@@ -136,6 +141,7 @@ EOF
     echo -e "${NC}"
     echo -e "  Version: ${GREEN}${SCRIPT_VERSION}${NC}"
     echo -e "  Repository: ${BLUE}${REPO_URL}${NC}"
+    echo -e "  Reference:  ${BLUE}${REFERENCE_URL}${NC}"
     echo -e ""
     echo -e "${YELLOW}  ⚠️  DISCLAIMER:${NC} This is a community-created installer."
     echo -e "      OpenClaw framework © its original creators"
@@ -168,14 +174,34 @@ check_for_updates() {
             if ask_yes_no "Would you like to update the installer?" "n"; then
                 log_info "Downloading latest installer..."
                 # Use $HOME instead of /tmp to avoid permission issues
-                if curl -fsSL "$SCRIPT_URL" -o "$HOME/install_new.sh"; then
-                    chmod +x "$HOME/install_new.sh"
-                    log_success "Installer updated! Restarting with new version..."
-                    exec "$HOME/install_new.sh" "${SCRIPT_ARGS[@]}"
-                else
+                if ! curl -fsSL "$SCRIPT_URL" -o "$HOME/install_new.sh"; then
                     log_error "Failed to download the latest installer"
                     rm -f "$HOME/install_new.sh"
                     log_info "Continuing with current version..."
+                else
+                    # Only restart when the downloaded copy is really newer. One
+                    # VERSION file serves both installers, so it can be ahead of
+                    # the published script of this mode; exec'ing it again would
+                    # download and exec the same file forever (endless loop with
+                    # --yes, which update-claw passes).
+                    local downloaded_version
+                    downloaded_version=$(sed -n 's/^SCRIPT_VERSION="\([^"]*\)"$/\1/p' \
+                        "$HOME/install_new.sh" 2>/dev/null | head -1)
+
+                    if [ "${OPENCLAW_INSTALLER_UPDATED:-0}" = "1" ]; then
+                        log_warn "Already restarted once with a downloaded installer - not restarting again"
+                        rm -f "$HOME/install_new.sh"
+                    elif [ -z "$downloaded_version" ] || \
+                            ! version_gt "$downloaded_version" "$SCRIPT_VERSION"; then
+                        log_warn "The published installer reports ${downloaded_version:-no version}, not newer than ${SCRIPT_VERSION}"
+                        log_info "Continuing with the current installer (the repository VERSION file may be ahead of the published script)."
+                        rm -f "$HOME/install_new.sh"
+                    else
+                        chmod +x "$HOME/install_new.sh"
+                        log_success "Installer updated to ${downloaded_version}! Restarting..."
+                        export OPENCLAW_INSTALLER_UPDATED=1
+                        exec "$HOME/install_new.sh" "${SCRIPT_ARGS[@]}"
+                    fi
                 fi
             else
                 log_info "Continuing with current version..."
