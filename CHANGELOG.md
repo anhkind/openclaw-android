@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports `--node 24`, `--node 26`, `--openclaw <version>`, `--latest`, `--update`, `--repair`, `--reinstall`, `--yes`, and `--skip-update-check`
   - Generates `update-claw`, `start-claw`, and `systemctl` helpers under `~/.openclaw-android`
   - Keeps installer and runtime files in `~/.openclaw-android`; OpenClaw data remains in `~/.openclaw`
+- 🔑 **`claw-token` shell function** (`termux/no-proot/install.sh`)
+  - Prints the gateway token from `~/.bashrc`, and configures one with `openclaw doctor --generate-gateway-token` when none exists yet (then tells you to restart the gateway)
+  - Explains `password`, `trusted-proxy`, and `none` auth modes instead of pretending a token exists
+  - Token-based by design: it refuses piped or redirected output, matching OpenClaw's own reveal, so it can never silently land in a log
+  - `--repair` now refreshes the generated `.bashrc` block, so existing installs pick up new aliases and functions
 
 ### Changed
 - 📦 Moved the Debian/PRoot installer from `install.sh` to `termux/with-proot/install.sh`

@@ -170,6 +170,7 @@ No installer scripts or downloads are stored in `~/.openclaw`; that directory be
 | `claw-doctor` | Run the doctor command. |
 | `claw-dashboard` | Open the dashboard. |
 | `claw-ps` | List OpenClaw processes. |
+| `claw-token` | Print the gateway token, configuring one when none exists yet. |
 
 ## Troubleshooting
 

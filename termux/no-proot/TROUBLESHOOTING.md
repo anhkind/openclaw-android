@@ -334,6 +334,23 @@ mv ~/.openclaw/state ~/.openclaw/state.bak.$(date +%Y%m%d-%H%M%S)
 start-claw
 ```
 
+### Need the gateway token for a client
+
+On the gateway host (the phone), in a terminal:
+
+```bash
+claw-token
+```
+
+It prints the shared token, and configures one with `openclaw doctor --generate-gateway-token` if none exists yet (then restart the gateway). It also explains itself when auth is not token-based: `password`, `trusted-proxy`, and `none` modes have no shared token.
+
+The underlying command is `openclaw gateway auth-token --show`. Both refuse piped or redirected output, so `claw-token > file` and `token=$(claw-token)` fail by design — `openclaw config get gateway.auth.token` is redacted too. Use the token with `--token` on the client, or via `gateway.remote.token`:
+
+```bash
+ssh -N -L 18789:127.0.0.1:18789 -p 8022 openclaw@<phone-ip>
+openclaw --url ws://127.0.0.1:18789 --token <token> health
+```
+
 ### Gateway will not start
 
 ```bash
