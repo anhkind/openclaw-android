@@ -31,8 +31,8 @@ Before running an installer, get Termux onto the device and set up SSH so you ca
 
 Install Termux from one of these sources — **do not use Google Play**, that build is outdated and unsupported:
 
-- **[F-Droid](https://f-droid.org/en/packages/com.termux/)** (recommended) — install the F-Droid client, then install Termux from it.
-- **[Termux GitHub releases](https://github.com/termux/termux-app/releases)** — download the `universal` APK (or the `arm64-v8a` one for most modern phones) and allow installs from your browser when prompted.
+- **[F-Droid](https://f-droid.org/en/packages/com.termux/)** — install the F-Droid client, then install Termux from it. Best if you want automatic updates.
+- **[Termux GitHub releases](https://github.com/termux/termux-app/releases)** — the official upstream APKs. Download the `universal` build, or `arm64-v8a` for most modern phones, and allow installs from your browser when prompted.
 
 Open Termux once after installing so it can finish its first-run setup.
 
@@ -112,13 +112,13 @@ curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termu
 
 **Wait 5-15 minutes** for the automated installation to complete.
 
-> ⚠️ **Use Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/), not Google Play.** The Play Store build is outdated and not supported.
+> ⚠️ **Install Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/) or the [Termux GitHub releases](https://github.com/termux/termux-app/releases), not Google Play.** The Play Store build is outdated and not supported.
 
 > ⚠️ **Start OpenClaw in the phone's Termux app, not over SSH.** Once the installer finishes, run `bash ~/.bashrc` and then `start-claw` (or `start-claw --lan` to expose it on your local network) directly on the device. OpenClaw cannot run as a service or in the background, so if you start it from an SSH session it will stop as soon as that session closes.
 
 ## 📋 Before You Start
 
-- **Termux from F-Droid**
+- **Termux from F-Droid or the [Termux GitHub releases](https://github.com/termux/termux-app/releases)** — not Google Play
 - **64-bit Android device**
 - **Android 12+** for no-PRoot (recommended), **Android 7+** for PRoot
 - **Storage:** 2GB+ for no-PRoot, 4GB+ for PRoot (6GB recommended)
@@ -173,7 +173,7 @@ Ways to contribute:
 - **OpenClaw** — The AI agent framework, created and maintained by the OpenClaw team and contributors
 - **[@iyeoh88-svg](https://github.com/iyeoh88-svg) and the [upstream openclaw-android project](https://github.com/iyeoh88-svg/openclaw-android)** — Original installer, documentation, and Android/Termux setup work this fork builds on
 - **[AidanPark/openclaw-android](https://github.com/AidanPark/openclaw-android)** — Android compatibility patch work used by the no-PRoot installer
-- **Termux and F-Droid** — The terminal environment and distribution channel for Android
+- **Termux, F-Droid, and the Termux GitHub releases** — The terminal environment and its distribution channels for Android
 - **Debian, PRoot, and `proot-distro`** — Runtime foundation for the With-PRoot option
 - **Node.js, NVM, and npm** — JavaScript runtime and package tooling
 - **`glibc-runner` and Termux package maintainers** — glibc runtime support used by the no-PRoot option
