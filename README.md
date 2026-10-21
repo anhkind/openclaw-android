@@ -23,6 +23,71 @@ This repository provides **two independent installation options**. The Termux-na
 
 Both installers are separate. They do not share runtime files or migrate an installation from one mode to the other.
 
+## 📱 Termux Setup
+
+Before running an installer, get Termux onto the device and set up SSH so you can work from a real keyboard on your computer.
+
+### 1. Install Termux
+
+Install Termux from one of these sources — **do not use Google Play**, that build is outdated and unsupported:
+
+- **[F-Droid](https://f-droid.org/en/packages/com.termux/)** (recommended) — install the F-Droid client, then install Termux from it.
+- **[Termux GitHub releases](https://github.com/termux/termux-app/releases)** — download the `universal` APK (or the `arm64-v8a` one for most modern phones) and allow installs from your browser when prompted.
+
+Open Termux once after installing so it can finish its first-run setup.
+
+### 2. Install OpenSSH in Termux
+
+In the Termux app:
+
+```bash
+pkg update && pkg upgrade -y
+pkg install openssh -y
+```
+
+Set a password for the SSH login (this is your Termux user password, not your Android lock screen):
+
+```bash
+passwd
+```
+
+### 3. Start the SSH server
+
+Termux runs its SSH daemon on port **8022** (not 22), because ports below 1024 need root.
+
+```bash
+sshd
+```
+
+Check that it is listening, and note the username you will log in with:
+
+```bash
+whoami
+ip addr show wlan0 | grep "inet "
+```
+
+Keep Termux in the foreground, or acquire a wake lock from the notification, so Android does not suspend `sshd`. To start it again later, just run `sshd` once more.
+
+### 4. Connect from your computer
+
+On the same Wi-Fi network, from your computer's terminal:
+
+```bash
+ssh -p 8022 <username>@<device-ip>
+```
+
+For example, `ssh -p 8022 u0_a123@192.168.1.42`. Accept the host key on first connect and enter the password you set with `passwd`.
+
+Optional — copy your public key so you can log in without a password:
+
+```bash
+ssh-copy-id -p 8022 <username>@<device-ip>
+```
+
+Once you are in, you can run the installer commands below directly from your computer's terminal. The post-install start commands are the exception — see the note in [Quick Start](#-quick-start).
+
+> 💡 **Tip:** If the connection is refused, confirm `sshd` is running in Termux, that both devices are on the same network, and that your router or VPN is not blocking client isolation.
+
 ## ⚡ Quick Start
 
 ### Option 1: Without PRoot (Termux-native) — Recommended
@@ -49,6 +114,8 @@ curl -fsSL https://raw.githubusercontent.com/anhkind/openclaw-android/main/termu
 
 > ⚠️ **Use Termux from [F-Droid](https://f-droid.org/en/packages/com.termux/), not Google Play.** The Play Store build is outdated and not supported.
 
+> ⚠️ **Start OpenClaw in the phone's Termux app, not over SSH.** Once the installer finishes, run `bash ~/.bashrc` and then `start-claw` (or `start-claw --lan` to expose it on your local network) directly on the device. OpenClaw cannot run as a service or in the background, so if you start it from an SSH session it will stop as soon as that session closes.
+
 ## 📋 Before You Start
 
 - **Termux from F-Droid**
@@ -62,6 +129,7 @@ Each installation guide contains the complete requirements, install options, pos
 
 ## 📚 Documentation
 
+- **[Termux setup](#-termux-setup)** — Install Termux and connect over SSH from your computer
 - **[No-PRoot setup guide](termux/no-proot/README.md)** — Recommended Termux-native installation
 - **[No-PRoot troubleshooting](termux/no-proot/TROUBLESHOOTING.md)** — Common Termux-native issues
 - **[With-PRoot setup guide](termux/with-proot/README.md)** — Debian/`proot-distro` installation
